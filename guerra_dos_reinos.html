@@ -1,0 +1,2864 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guerra dos Reinos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=MedievalSharp&display=swap" rel="stylesheet">
+<style>
+:root {
+  --parchment-1: #f3e3bd;
+  --parchment-2: #e6cf99;
+  --parchment-3: #c9a662;
+  --wood-1: #4a2f1a;
+  --wood-2: #6b4423;
+  --wood-3: #8b5a2b;
+  --gold: #d4af37;
+  --ink: #2b1a0a;
+  --blood: #7b1f1f;
+  --green-moss: #4a5a2a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #1a0f08;
+  font-family: 'Cinzel', serif;
+  color: var(--ink);
+}
+
+#game-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#map-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  cursor: crosshair;
+  background: #2a3d1f;
+}
+
+/* ===================== TELA INICIAL ===================== */
+#start-screen {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, rgba(212, 175, 55, 0.15) 0%, transparent 70%),
+    linear-gradient(180deg, #1a0f08 0%, #2a1a0a 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 2rem;
+}
+
+#start-screen h1 {
+  font-family: 'MedievalSharp', cursive;
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(212, 175, 55, 0.5), 3px 3px 0 #000;
+  margin-bottom: 0.3rem;
+  letter-spacing: 0.05em;
+}
+
+#start-screen .subtitle {
+  font-family: 'Cinzel', serif;
+  color: var(--parchment-2);
+  letter-spacing: 0.3em;
+  font-size: 0.9rem;
+  margin-bottom: 2.5rem;
+  opacity: 0.8;
+}
+
+.civ-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  max-width: 900px;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.civ-card {
+  background: linear-gradient(180deg, var(--parchment-1) 0%, var(--parchment-2) 100%);
+  border: 3px solid var(--wood-2);
+  border-radius: 6px;
+  padding: 1rem;
+  cursor: pointer;
+  text-align: center;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(139, 90, 43, 0.2);
+}
+
+.civ-card:hover {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 8px 24px rgba(212, 175, 55, 0.4), inset 0 0 20px rgba(139, 90, 43, 0.2);
+  border-color: var(--gold);
+}
+
+.civ-card.selected {
+  border-color: var(--gold);
+  box-shadow: 0 0 30px var(--gold), inset 0 0 20px rgba(212, 175, 55, 0.3);
+}
+
+.civ-banner {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 0.6rem;
+  display: block;
+}
+
+.civ-name {
+  font-family: 'MedievalSharp', cursive;
+  font-size: 1.4rem;
+  color: var(--wood-1);
+  margin-bottom: 0.3rem;
+}
+
+.civ-bonus {
+  font-size: 0.8rem;
+  color: var(--ink);
+  font-style: italic;
+  line-height: 1.3;
+}
+
+.start-btn {
+  font-family: 'MedievalSharp', cursive;
+  font-size: 1.5rem;
+  padding: 0.9rem 3rem;
+  background: linear-gradient(180deg, #c9a662 0%, #8b5a2b 100%);
+  color: #fff;
+  border: 3px solid var(--gold);
+  border-radius: 4px;
+  cursor: pointer;
+  text-shadow: 2px 2px 0 #000;
+  letter-spacing: 0.1em;
+  transition: all 0.15s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.start-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.6);
+}
+
+.start-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ===================== HUD ===================== */
+#hud-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50px;
+  background: linear-gradient(180deg, var(--wood-2) 0%, var(--wood-1) 100%);
+  border-bottom: 3px solid var(--gold);
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  z-index: 10;
+  font-family: 'Cinzel', serif;
+  color: var(--parchment-1);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.resource {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 1.4rem;
+  font-size: 1rem;
+}
+
+.resource-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  border: 1px solid var(--gold);
+}
+
+.hud-spacer { flex: 1; }
+
+.hud-info {
+  margin-left: 1.4rem;
+  font-size: 0.9rem;
+  color: var(--parchment-2);
+}
+
+#hud-info-pop { color: var(--gold); }
+
+/* ===================== PAINEL INFERIOR ===================== */
+#hud-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 160px;
+  background: linear-gradient(0deg, var(--wood-1) 0%, var(--wood-2) 100%);
+  border-top: 3px solid var(--gold);
+  display: flex;
+  z-index: 10;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.5);
+}
+
+#selection-panel {
+  flex: 1;
+  padding: 0.8rem;
+  border-right: 2px solid var(--wood-3);
+  color: var(--parchment-1);
+  display: flex;
+  flex-direction: column;
+}
+
+.sel-title {
+  font-family: 'MedievalSharp', cursive;
+  font-size: 1.3rem;
+  color: var(--gold);
+  margin-bottom: 0.2rem;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.sel-stats {
+  font-size: 0.85rem;
+  color: var(--parchment-2);
+  margin-bottom: 0.5rem;
+}
+
+.sel-stats div { margin: 2px 0; }
+
+#actions-panel {
+  flex: 0 0 360px;
+  padding: 0.6rem;
+  border-right: 2px solid var(--wood-3);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 4px;
+  align-content: start;
+}
+
+.action-btn {
+  background: linear-gradient(180deg, var(--parchment-1) 0%, var(--parchment-3) 100%);
+  border: 2px solid var(--wood-2);
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  color: var(--ink);
+  transition: all 0.1s;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn:hover:not(:disabled) {
+  border-color: var(--gold);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(212, 175, 55, 0.4);
+}
+
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.action-btn canvas {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 2px;
+}
+
+.action-cost {
+  font-size: 0.55rem;
+  color: var(--wood-1);
+  font-weight: 700;
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+#minimap-panel {
+  flex: 0 0 170px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#minimap {
+  width: 150px;
+  height: 150px;
+  border: 3px solid var(--gold);
+  border-radius: 3px;
+  cursor: pointer;
+  background: #1a2a0a;
+}
+
+/* ===================== TELA FIM JOGO ===================== */
+#endgame-screen {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  color: var(--parchment-1);
+  font-family: 'Cinzel', serif;
+}
+
+#endgame-screen h2 {
+  font-family: 'MedievalSharp', cursive;
+  font-size: 5rem;
+  margin-bottom: 1rem;
+  text-shadow: 0 0 30px currentColor, 3px 3px 0 #000;
+}
+
+#endgame-screen.victory h2 { color: var(--gold); }
+#endgame-screen.defeat h2 { color: #d44; }
+
+.endgame-stats {
+  background: rgba(243, 227, 189, 0.1);
+  padding: 1.5rem 2.5rem;
+  border: 2px solid var(--gold);
+  border-radius: 6px;
+  margin-bottom: 2rem;
+  font-size: 1.05rem;
+}
+
+.endgame-stats div { margin: 0.4rem 0; }
+
+/* ===================== TOAST ===================== */
+#toast {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(122, 31, 31, 0.92);
+  color: var(--parchment-1);
+  padding: 0.6rem 1.2rem;
+  border: 2px solid var(--gold);
+  border-radius: 4px;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  z-index: 50;
+  display: none;
+  pointer-events: none;
+  text-shadow: 1px 1px 0 #000;
+}
+
+/* Estado de placement */
+body.placing { cursor: copy; }
+body.placing #map-canvas { cursor: copy; }
+
+</style>
+</head>
+<body>
+<div id="game-container">
+
+  <!-- Tela inicial -->
+  <div id="start-screen">
+    <h1>Guerra dos Reinos</h1>
+    <div class="subtitle">⚔ ESCOLHA SEU POVO ⚔</div>
+    <div class="civ-grid" id="civ-grid"></div>
+    <button class="start-btn" id="start-btn" disabled>Marchar para a Guerra</button>
+  </div>
+
+  <!-- Canvas principal -->
+  <canvas id="map-canvas"></canvas>
+
+  <!-- HUD topo -->
+  <div id="hud-top" style="display:none;">
+    <div class="resource"><div class="resource-icon" style="color:#c87838;">🪵</div><span id="r-wood">200</span></div>
+    <div class="resource"><div class="resource-icon" style="color:#d4424c;">🍎</div><span id="r-food">200</span></div>
+    <div class="resource"><div class="resource-icon" style="color:#d4af37;">⚜</div><span id="r-gold">100</span></div>
+    <div class="resource"><div class="resource-icon" style="color:#9a9a9a;">⛰</div><span id="r-stone">100</span></div>
+    <div class="hud-spacer"></div>
+    <div class="hud-info">Reino: <span id="hud-info-civ">—</span></div>
+    <div class="hud-info">Pop: <span id="hud-info-pop">0/0</span></div>
+    <div class="hud-info">⏱ <span id="hud-info-time">00:00</span></div>
+  </div>
+
+  <!-- HUD inferior -->
+  <div id="hud-bottom" style="display:none;">
+    <div id="selection-panel">
+      <div class="sel-title" id="sel-title">Sem seleção</div>
+      <div class="sel-stats" id="sel-stats">Clique em uma unidade ou edifício</div>
+    </div>
+    <div id="actions-panel"></div>
+    <div id="minimap-panel">
+      <canvas id="minimap" width="300" height="300"></canvas>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <!-- Endgame -->
+  <div id="endgame-screen">
+    <h2 id="endgame-title">Vitória!</h2>
+    <div class="endgame-stats" id="endgame-stats"></div>
+    <button class="start-btn" onclick="location.reload()">Jogar Novamente</button>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+
+// ============================================================
+// CONFIGURAÇÃO GLOBAL
+// ============================================================
+const CONFIG = {
+  TILE_SIZE: 36,
+  MAP_W: 60,
+  MAP_H: 60,
+  POP_PER_HOUSE: 5,
+  POP_INITIAL_MAX: 10,
+  START_RESOURCES: { wood: 200, food: 200, gold: 100, stone: 100 },
+  AI_ATTACK_INTERVAL: 75, // segundos entre ataques
+  AI_FIRST_ATTACK: 90,
+};
+
+// Tipos de tile
+const T_GRASS = 0, T_WATER = 1, T_DIRT = 2, T_FOREST = 3, T_STONE = 4, T_GOLD = 5, T_FOOD = 6;
+
+// Cores dos povos
+const CIVS = {
+  francos:    { name: 'Francos',    color: '#3b6dbf', accent: '#d4af37', bonus: 'Cavaleiros 20% mais baratos', desc: 'cavalo' },
+  saxoes:     { name: 'Saxões',     color: '#5c7a3d', accent: '#a8a8a8', bonus: 'Muralhas custam 50% menos pedra', desc: 'escudo' },
+  normandos:  { name: 'Normandos',  color: '#b32d2d', accent: '#1a1a1a', bonus: 'Arqueiros com +2 alcance', desc: 'arco' },
+  vikings:    { name: 'Vikings',    color: '#d4a017', accent: '#1f4f8f', bonus: 'Unidades com +15% vida', desc: 'machado' },
+  iberos:     { name: 'Iberos',     color: '#c46a2a', accent: '#5a1f1f', bonus: 'Coleta de ouro 30% mais rápida', desc: 'sol' },
+  eslavos:    { name: 'Eslavos',    color: '#6b8e4f', accent: '#5a3a1a', bonus: 'Aldeões constroem 25% mais rápido', desc: 'martelo' },
+};
+
+// Definições de edifícios
+const BUILDINGS = {
+  centro:    { name: 'Centro da Cidade', size: 3, hp: 2400, cost: { wood: 0, stone: 0 }, buildTime: 0, drops: ['wood','food','gold','stone'] },
+  casa:      { name: 'Casa',             size: 2, hp: 500,  cost: { wood: 25 }, buildTime: 12, popBonus: 5 },
+  serraria:  { name: 'Serraria',         size: 2, hp: 600,  cost: { wood: 80 }, buildTime: 18, drops: ['wood'] },
+  celeiro:   { name: 'Celeiro',          size: 2, hp: 600,  cost: { wood: 80 }, buildTime: 18, drops: ['food'] },
+  mineracao: { name: 'Posto de Mineração',size: 2, hp: 600,  cost: { wood: 80 }, buildTime: 18, drops: ['gold','stone'] },
+  quartel:   { name: 'Quartel',          size: 2, hp: 1000, cost: { wood: 150 }, buildTime: 28, trains: ['espadachim','lanceiro'] },
+  arqueiros: { name: 'Oficina Arqueiros',size: 2, hp: 900,  cost: { wood: 150 }, buildTime: 28, trains: ['arqueiro'] },
+  estabulo:  { name: 'Estábulo',         size: 2, hp: 900,  cost: { wood: 150, stone: 50 }, buildTime: 30, trains: ['cavaleiro'] },
+  torre:     { name: 'Torre de Vigia',   size: 1, hp: 1200, cost: { wood: 50, stone: 100 }, buildTime: 25, attack: { range: 6, damage: 18, cooldown: 1.5 } },
+  muralha:   { name: 'Muralha',          size: 1, hp: 1500, cost: { stone: 30 }, buildTime: 8 },
+};
+
+// Definições de unidades
+const UNITS = {
+  aldeao:     { name: 'Aldeão',     hp: 35,  damage: 4,  range: 1, speed: 1.7, cost: { food: 50 }, trainTime: 20, building: 'centro', attackCD: 1.5, gather: true },
+  espadachim: { name: 'Espadachim', hp: 60,  damage: 9,  range: 1, speed: 1.5, cost: { food: 60, gold: 20 }, trainTime: 22, building: 'quartel', attackCD: 1.4 },
+  lanceiro:   { name: 'Lanceiro',   hp: 50,  damage: 7,  range: 1, speed: 1.7, cost: { food: 35, wood: 25 }, trainTime: 18, building: 'quartel', attackCD: 1.3, vsCav: 2.0 },
+  arqueiro:   { name: 'Arqueiro',   hp: 35,  damage: 6,  range: 5, speed: 1.6, cost: { food: 25, wood: 45 }, trainTime: 22, building: 'arqueiros', attackCD: 1.6, ranged: true },
+  cavaleiro:  { name: 'Cavaleiro',  hp: 100, damage: 12, range: 1, speed: 2.6, cost: { food: 70, gold: 75 }, trainTime: 30, building: 'estabulo', attackCD: 1.5, isCav: true },
+};
+
+// ============================================================
+// ESTADO DO JOGO
+// ============================================================
+const G = {
+  canvas: null, ctx: null,
+  miniCanvas: null, miniCtx: null,
+  map: [],          // 2D grid de tiles
+  resources: [],    // recursos no mapa: {x, y, type, amount, tileX, tileY}
+  units: [],
+  buildings: [],
+  projectiles: [],
+  particles: [],
+  player: { civ: 'francos', resources: {...CONFIG.START_RESOURCES}, popMax: CONFIG.POP_INITIAL_MAX, isAI: false, lostStats: { gathered: {wood:0,food:0,gold:0,stone:0}, trained: 0, built: 0 } },
+  ai:     { civ: 'vikings',  resources: {...CONFIG.START_RESOURCES}, popMax: CONFIG.POP_INITIAL_MAX, isAI: true, aiState: 'expand', lastAttack: 0, lastBuild: 0, lastTrain: 0 },
+  camera: { x: 0, y: 0 },
+  selected: [],     // ids selecionados
+  pendingBuild: null, // { type } quando jogador vai posicionar edifício
+  mouse: { x: 0, y: 0, downX: 0, downY: 0, isDown: false, isDragging: false, button: 0 },
+  selectionBox: null,
+  time: 0,
+  paused: false,
+  gameOver: false,
+  nextId: 1,
+  occupancy: [],   // grid: 0 = livre, 1+ = bloqueado/edifício
+  toastTimer: 0,
+};
+
+// ============================================================
+// UTILS
+// ============================================================
+function newId() { return G.nextId++; }
+function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+function dist2(ax, ay, bx, by) { return Math.hypot(ax - bx, ay - by); }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function rand(a, b) { return a + Math.random() * (b - a); }
+function randi(a, b) { return Math.floor(rand(a, b)); }
+function tileToWorld(tx, ty) { return { x: tx * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE/2, y: ty * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE/2 }; }
+function worldToTile(x, y) { return { tx: Math.floor(x / CONFIG.TILE_SIZE), ty: Math.floor(y / CONFIG.TILE_SIZE) }; }
+
+function showToast(msg, dur = 2.5) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  G.toastTimer = dur;
+}
+
+function getOwner(o) { return o.owner === 'ai' ? G.ai : G.player; }
+
+// ============================================================
+// GERAÇÃO DO MAPA
+// ============================================================
+function generateMap() {
+  G.map = [];
+  G.occupancy = [];
+  for (let y = 0; y < CONFIG.MAP_H; y++) {
+    G.map.push(new Array(CONFIG.MAP_W).fill(T_GRASS));
+    G.occupancy.push(new Array(CONFIG.MAP_W).fill(0));
+  }
+
+  // Manchas de água nas bordas (alguns lagos)
+  for (let i = 0; i < 5; i++) {
+    const cx = randi(5, CONFIG.MAP_W - 5);
+    const cy = randi(5, CONFIG.MAP_H - 5);
+    const r = randi(2, 4);
+    for (let y = cy - r; y <= cy + r; y++) {
+      for (let x = cx - r; x <= cx + r; x++) {
+        if (x >= 0 && x < CONFIG.MAP_W && y >= 0 && y < CONFIG.MAP_H) {
+          if ((x-cx)**2 + (y-cy)**2 <= r*r) {
+            // Não colocar água perto dos spawn points
+            const distFromPlayerSpawn = Math.hypot(x - 8, y - 8);
+            const distFromAISpawn = Math.hypot(x - (CONFIG.MAP_W - 8), y - (CONFIG.MAP_H - 8));
+            if (distFromPlayerSpawn > 10 && distFromAISpawn > 10) {
+              G.map[y][x] = T_WATER;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Florestas (clusters de árvores)
+  const forestCount = 14;
+  for (let i = 0; i < forestCount; i++) {
+    const cx = randi(4, CONFIG.MAP_W - 4);
+    const cy = randi(4, CONFIG.MAP_H - 4);
+    const distP = Math.hypot(cx - 8, cy - 8);
+    const distA = Math.hypot(cx - (CONFIG.MAP_W - 8), cy - (CONFIG.MAP_H - 8));
+    if (distP < 6 || distA < 6) continue;
+    const size = randi(3, 7);
+    for (let dy = -size; dy <= size; dy++) {
+      for (let dx = -size; dx <= size; dx++) {
+        const x = cx + dx, y = cy + dy;
+        if (x < 1 || x >= CONFIG.MAP_W - 1 || y < 1 || y >= CONFIG.MAP_H - 1) continue;
+        if (G.map[y][x] !== T_GRASS) continue;
+        const d = Math.hypot(dx, dy);
+        if (d <= size && Math.random() < 0.7 - d / (size * 1.4)) {
+          G.map[y][x] = T_FOREST;
+          G.resources.push({ id: newId(), tileX: x, tileY: y, x: x*CONFIG.TILE_SIZE+CONFIG.TILE_SIZE/2, y: y*CONFIG.TILE_SIZE+CONFIG.TILE_SIZE/2, type: 'wood', amount: 100 });
+          G.occupancy[y][x] = 9; // bloqueado
+        }
+      }
+    }
+  }
+
+  // Pedreiras
+  for (let i = 0; i < 6; i++) {
+    const cx = randi(6, CONFIG.MAP_W - 6);
+    const cy = randi(6, CONFIG.MAP_H - 6);
+    const distP = Math.hypot(cx - 8, cy - 8);
+    const distA = Math.hypot(cx - (CONFIG.MAP_W - 8), cy - (CONFIG.MAP_H - 8));
+    if (distP < 7 || distA < 7) continue;
+    const cluster = randi(3, 5);
+    for (let j = 0; j < cluster; j++) {
+      const x = cx + randi(-2, 2);
+      const y = cy + randi(-2, 2);
+      if (x < 1 || x >= CONFIG.MAP_W - 1 || y < 1 || y >= CONFIG.MAP_H - 1) continue;
+      if (G.map[y][x] !== T_GRASS) continue;
+      G.map[y][x] = T_STONE;
+      G.resources.push({ id: newId(), tileX: x, tileY: y, x: x*CONFIG.TILE_SIZE+CONFIG.TILE_SIZE/2, y: y*CONFIG.TILE_SIZE+CONFIG.TILE_SIZE/2, type: 'stone', amount: 200 });
+      G.occupancy[y][x] = 9;
+    }
+  }
+
+  // Minas de ouro
+  for (let i = 0; i < 5; i++) {
+    const cx = randi(8, CONFIG.MAP_W - 8);
+    const cy = randi(8, CONFIG.MAP_H - 8);
+    const distP = Math.hypot(cx - 8, cy - 8);
+    const distA = Math.hypot(cx - (CONFIG.MAP_W - 8), cy - (CONFIG.MAP_H - 8));
+    if (distP < 8 || distA < 8) continue;
+    const cluster = randi(2, 4);
+    for (let j = 0; j < cluster; j++) {
+      const x = cx + randi(-1, 1);
+      const y = cy + randi(-1, 1);
+      if (x < 1 || x >= CONFIG.MAP_W - 1 || y < 1 || y >= CONFIG.MAP_H - 1) continue;
+      if (G.map[y][x] !== T_GRASS) continue;
+      G.map[y][x] = T_GOLD;
+      G.resources.push({ id: newId(), tileX: x, tileY: y, x: x*CONFIG.TILE_SIZE+CONFIG.TILE_SIZE/2, y: y*CONFIG.TILE_SIZE+CONFIG.TILE_SIZE/2, type: 'gold', amount: 150 });
+      G.occupancy[y][x] = 9;
+    }
+  }
+
+  // Arbustos de comida (perto dos spawns)
+  function placeFoodNear(cx, cy) {
+    let placed = 0;
+    let attempts = 0;
+    while (placed < 8 && attempts < 50) {
+      attempts++;
+      const x = cx + randi(-5, 5);
+      const y = cy + randi(-5, 5);
+      if (x < 1 || x >= CONFIG.MAP_W - 1 || y < 1 || y >= CONFIG.MAP_H - 1) continue;
+      if (G.map[y][x] !== T_GRASS) continue;
+      G.map[y][x] = T_FOOD;
+      G.resources.push({ id: newId(), tileX: x, tileY: y, x: x*CONFIG.TILE_SIZE+CONFIG.TILE_SIZE/2, y: y*CONFIG.TILE_SIZE+CONFIG.TILE_SIZE/2, type: 'food', amount: 80 });
+      G.occupancy[y][x] = 9;
+      placed++;
+    }
+  }
+  placeFoodNear(8, 8);
+  placeFoodNear(CONFIG.MAP_W - 8, CONFIG.MAP_H - 8);
+
+  // Mais arbustos espalhados
+  for (let i = 0; i < 8; i++) {
+    const cx = randi(10, CONFIG.MAP_W - 10);
+    const cy = randi(10, CONFIG.MAP_H - 10);
+    placeFoodNear(cx, cy);
+  }
+
+  // Marcar água como bloqueada
+  for (let y = 0; y < CONFIG.MAP_H; y++)
+    for (let x = 0; x < CONFIG.MAP_W; x++)
+      if (G.map[y][x] === T_WATER) G.occupancy[y][x] = 9;
+}
+
+// ============================================================
+// CRIAR ENTIDADES
+// ============================================================
+function createBuilding(type, tileX, tileY, owner, completed = false) {
+  const def = BUILDINGS[type];
+  const b = {
+    id: newId(),
+    type,
+    name: def.name,
+    tileX, tileY,
+    size: def.size,
+    x: (tileX + def.size/2) * CONFIG.TILE_SIZE,
+    y: (tileY + def.size/2) * CONFIG.TILE_SIZE,
+    hp: completed ? def.hp : 1,
+    maxHp: def.hp,
+    owner,
+    completed,
+    buildProgress: completed ? 1 : 0,
+    buildTime: def.buildTime,
+    builders: 0,
+    trainQueue: [],
+    trainProgress: 0,
+    attackCD: 0,
+    target: null,
+    isBuilding: true,
+  };
+  // Marcar ocupação
+  for (let dy = 0; dy < def.size; dy++)
+    for (let dx = 0; dx < def.size; dx++)
+      if (G.occupancy[tileY+dy] && G.occupancy[tileY+dy][tileX+dx] !== undefined)
+        G.occupancy[tileY+dy][tileX+dx] = b.id;
+  G.buildings.push(b);
+  if (owner === 'player') G.player.lostStats.built++;
+  return b;
+}
+
+function createUnit(type, x, y, owner) {
+  const def = UNITS[type];
+  const ownerObj = owner === 'ai' ? G.ai : G.player;
+
+  // Aplicar bônus do povo
+  let hp = def.hp;
+  let damage = def.damage;
+  let range = def.range;
+  if (ownerObj.civ === 'vikings') hp = Math.round(hp * 1.15);
+  if (ownerObj.civ === 'normandos' && type === 'arqueiro') range = def.range + 2;
+
+  const u = {
+    id: newId(),
+    type,
+    name: def.name,
+    x, y,
+    hp, maxHp: hp,
+    damage,
+    range,
+    speed: def.speed * CONFIG.TILE_SIZE, // pixels por segundo
+    attackCD: 0,
+    cooldown: def.attackCD,
+    owner,
+    target: null,        // {type:'pos'|'unit'|'building'|'resource', ...}
+    moveTarget: null,    // {x, y}
+    state: 'idle',       // idle, moving, attacking, gathering, returning, building
+    carrying: null,      // {type, amount}
+    gatherTimer: 0,
+    lastResource: null,
+    facing: 0,           // ângulo para desenhar
+    isUnit: true,
+    isCav: def.isCav,
+    isRanged: def.ranged,
+    vsCav: def.vsCav || 1,
+    canGather: def.gather,
+  };
+  G.units.push(u);
+  if (owner === 'player' && type !== 'aldeao') G.player.lostStats.trained++;
+  return u;
+}
+
+// ============================================================
+// SETUP INICIAL
+// ============================================================
+function setupGame(playerCiv) {
+  G.player.civ = playerCiv;
+  // IA escolhe um povo diferente aleatoriamente
+  const civKeys = Object.keys(CIVS).filter(k => k !== playerCiv);
+  G.ai.civ = civKeys[Math.floor(Math.random() * civKeys.length)];
+
+  generateMap();
+
+  // Spawn jogador
+  const pcx = 8, pcy = 8;
+  // Limpar área do spawn
+  for (let dy = -2; dy <= 4; dy++)
+    for (let dx = -2; dx <= 4; dx++) {
+      const tx = pcx + dx, ty = pcy + dy;
+      if (G.map[ty] && G.map[ty][tx] !== undefined && G.map[ty][tx] !== T_WATER) {
+        if (G.map[ty][tx] === T_FOREST || G.map[ty][tx] === T_STONE || G.map[ty][tx] === T_GOLD) {
+          // remover recurso
+          const ri = G.resources.findIndex(r => r.tileX === tx && r.tileY === ty);
+          if (ri >= 0) G.resources.splice(ri, 1);
+          G.map[ty][tx] = T_GRASS;
+          G.occupancy[ty][tx] = 0;
+        }
+      }
+    }
+  createBuilding('centro', pcx, pcy, 'player', true);
+  // 3 aldeões iniciais
+  for (let i = 0; i < 3; i++) {
+    const wp = tileToWorld(pcx + 4, pcy + 1 + i);
+    createUnit('aldeao', wp.x, wp.y, 'player');
+  }
+
+  // Spawn IA
+  const acx = CONFIG.MAP_W - 11, acy = CONFIG.MAP_H - 11;
+  for (let dy = -2; dy <= 4; dy++)
+    for (let dx = -2; dx <= 4; dx++) {
+      const tx = acx + dx, ty = acy + dy;
+      if (G.map[ty] && G.map[ty][tx] !== undefined && G.map[ty][tx] !== T_WATER) {
+        if (G.map[ty][tx] === T_FOREST || G.map[ty][tx] === T_STONE || G.map[ty][tx] === T_GOLD) {
+          const ri = G.resources.findIndex(r => r.tileX === tx && r.tileY === ty);
+          if (ri >= 0) G.resources.splice(ri, 1);
+          G.map[ty][tx] = T_GRASS;
+          G.occupancy[ty][tx] = 0;
+        }
+      }
+    }
+  createBuilding('centro', acx, acy, 'ai', true);
+  for (let i = 0; i < 3; i++) {
+    const wp = tileToWorld(acx - 1, acy + 1 + i);
+    createUnit('aldeao', wp.x, wp.y, 'ai');
+  }
+
+  // Centralizar câmera no jogador
+  const playerCenter = tileToWorld(pcx + 1, pcy + 1);
+  G.camera.x = playerCenter.x - window.innerWidth / 2;
+  G.camera.y = playerCenter.y - window.innerHeight / 2;
+
+  // Mostrar HUD
+  document.getElementById('hud-top').style.display = 'flex';
+  document.getElementById('hud-bottom').style.display = 'flex';
+  document.getElementById('hud-info-civ').textContent = CIVS[playerCiv].name;
+}
+
+// ============================================================
+// RECURSOS / CUSTOS
+// ============================================================
+function canAfford(owner, cost, civ) {
+  // Aplicar descontos por civ
+  let c = {...cost};
+  if (civ === 'saxoes' && c.stone) c.stone = Math.round(c.stone * 0.5);
+  if (civ === 'francos' && cost.gold && cost.food) {
+    // só aplicar para cavaleiro (verificado por contexto fora)
+  }
+  for (const k in c) {
+    if ((owner.resources[k] || 0) < c[k]) return false;
+  }
+  return true;
+}
+
+function pay(owner, cost, civ) {
+  let c = {...cost};
+  if (civ === 'saxoes' && c.stone) c.stone = Math.round(c.stone * 0.5);
+  for (const k in c) {
+    owner.resources[k] = (owner.resources[k] || 0) - c[k];
+  }
+}
+
+function getUnitCost(type, civ) {
+  const base = {...UNITS[type].cost};
+  if (civ === 'francos' && type === 'cavaleiro') {
+    if (base.food) base.food = Math.round(base.food * 0.8);
+    if (base.gold) base.gold = Math.round(base.gold * 0.8);
+  }
+  return base;
+}
+
+// ============================================================
+// PATHFINDING (simplificado, steering com avoid)
+// ============================================================
+function isTileBlocked(tx, ty) {
+  if (tx < 0 || tx >= CONFIG.MAP_W || ty < 0 || ty >= CONFIG.MAP_H) return true;
+  if (G.map[ty][tx] === T_WATER) return true;
+  return false;
+}
+
+function isTileBlockedForUnit(tx, ty) {
+  if (isTileBlocked(tx, ty)) return true;
+  // Recursos / edifícios bloqueiam
+  return G.occupancy[ty][tx] !== 0;
+}
+
+// Retorna posição livre próxima a um tile-target (para construção/coleta)
+function findNearbyFreeWorldPos(targetX, targetY, range = 2) {
+  const t = worldToTile(targetX, targetY);
+  for (let r = 1; r <= range; r++) {
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+        const tx = t.tx + dx, ty = t.ty + dy;
+        if (!isTileBlockedForUnit(tx, ty)) {
+          return tileToWorld(tx, ty);
+        }
+      }
+    }
+  }
+  return null;
+}
+
+// Movimento steering: tenta ir para moveTarget; se obstruído, contorna
+function moveUnit(u, dt) {
+  if (!u.moveTarget) return;
+  const tx = u.moveTarget.x, ty = u.moveTarget.y;
+  const dx = tx - u.x, dy = ty - u.y;
+  const d = Math.hypot(dx, dy);
+  if (d < 4) {
+    u.moveTarget = null;
+    return;
+  }
+
+  let vx = dx / d * u.speed;
+  let vy = dy / d * u.speed;
+
+  // Evitar sobreposição com outras unidades (separação)
+  let sepX = 0, sepY = 0, count = 0;
+  for (const other of G.units) {
+    if (other === u || other.hp <= 0) continue;
+    const odx = u.x - other.x, ody = u.y - other.y;
+    const od = Math.hypot(odx, ody);
+    if (od < 18 && od > 0.1) {
+      sepX += odx / od;
+      sepY += ody / od;
+      count++;
+    }
+  }
+  if (count > 0) {
+    vx += (sepX / count) * u.speed * 0.8;
+    vy += (sepY / count) * u.speed * 0.8;
+  }
+
+  // Tentar próximo passo
+  let nx = u.x + vx * dt;
+  let ny = u.y + vy * dt;
+
+  // Checar tile destino
+  const dest = worldToTile(nx, ny);
+  if (isTileBlocked(dest.tx, dest.ty)) {
+    // Tentar só X
+    const destX = worldToTile(nx, u.y);
+    if (!isTileBlocked(destX.tx, destX.ty)) {
+      ny = u.y;
+    } else {
+      const destY = worldToTile(u.x, ny);
+      if (!isTileBlocked(destY.tx, destY.ty)) {
+        nx = u.x;
+      } else {
+        // Travado
+        u.moveTarget = null;
+        return;
+      }
+    }
+  } else if (G.occupancy[dest.ty] && G.occupancy[dest.ty][dest.tx] !== 0) {
+    // Edifício/recurso bloqueando — tentar passar pelas laterais ou parar próximo
+    if (d < CONFIG.TILE_SIZE * 1.5) {
+      u.moveTarget = null;
+      return;
+    }
+    // Steering ao redor
+    const angle = Math.atan2(dy, dx) + (Math.random() < 0.5 ? 0.7 : -0.7);
+    nx = u.x + Math.cos(angle) * u.speed * dt;
+    ny = u.y + Math.sin(angle) * u.speed * dt;
+    const t2 = worldToTile(nx, ny);
+    if (isTileBlocked(t2.tx, t2.ty)) {
+      u.moveTarget = null;
+      return;
+    }
+  }
+
+  u.x = nx;
+  u.y = ny;
+  u.facing = Math.atan2(dy, dx);
+}
+
+// ============================================================
+// COMANDAR UNIDADE
+// ============================================================
+function commandMove(u, x, y) {
+  u.state = 'moving';
+  u.target = null;
+  u.moveTarget = { x, y };
+}
+
+function commandAttack(u, target) {
+  u.state = 'attacking';
+  u.target = target;
+  u.moveTarget = { x: target.x, y: target.y };
+}
+
+function commandGather(u, resource) {
+  if (!u.canGather) return;
+  u.state = 'gathering';
+  u.target = resource;
+  // Posição adjacente
+  const adj = findNearbyFreeWorldPos(resource.x, resource.y);
+  u.moveTarget = adj || { x: resource.x, y: resource.y };
+}
+
+function commandBuild(u, building) {
+  if (!u.canGather) return;
+  u.state = 'building';
+  u.target = building;
+  const adj = findNearbyFreeWorldPos(building.x, building.y);
+  u.moveTarget = adj || { x: building.x, y: building.y };
+}
+
+// Encontrar depósito mais próximo do tipo
+function findNearestDeposit(u, resType) {
+  const ownerObj = u.owner;
+  let best = null, bestD = Infinity;
+  for (const b of G.buildings) {
+    if (b.owner !== ownerObj || !b.completed) continue;
+    if (!b.hp || b.hp <= 0) continue;
+    const def = BUILDINGS[b.type];
+    if (!def.drops) continue;
+    if (!def.drops.includes(resType)) continue;
+    const d = dist(u, b);
+    if (d < bestD) { bestD = d; best = b; }
+  }
+  return best;
+}
+
+function findNearestResource(u, type, maxDist = 9999) {
+  let best = null, bestD = maxDist;
+  for (const r of G.resources) {
+    if (r.amount <= 0) continue;
+    if (type && r.type !== type) continue;
+    const d = dist(u, r);
+    if (d < bestD) { bestD = d; best = r; }
+  }
+  return best;
+}
+
+// ============================================================
+// UPDATE COMBATE / UNIDADES
+// ============================================================
+function findEnemyInRange(u, range) {
+  const enemyOwner = u.owner === 'player' ? 'ai' : 'player';
+  let best = null, bestD = range * CONFIG.TILE_SIZE;
+  for (const o of G.units) {
+    if (o.owner !== enemyOwner || o.hp <= 0) continue;
+    const d = dist(u, o);
+    if (d < bestD) { bestD = d; best = o; }
+  }
+  for (const b of G.buildings) {
+    if (b.owner !== enemyOwner || b.hp <= 0) continue;
+    const d = dist(u, b);
+    if (d < bestD) { bestD = d; best = b; }
+  }
+  return best;
+}
+
+function updateUnit(u, dt) {
+  if (u.hp <= 0) return;
+  u.attackCD = Math.max(0, u.attackCD - dt);
+
+  // Auto-aquisição de alvo se idle e não-aldeão
+  if (u.state === 'idle' && !u.canGather) {
+    const visRange = 6;
+    const enemy = findEnemyInRange(u, visRange);
+    if (enemy) {
+      u.target = enemy;
+      u.state = 'attacking';
+      u.moveTarget = { x: enemy.x, y: enemy.y };
+    }
+  }
+
+  // Estado: gathering (aldeão coletando)
+  if (u.state === 'gathering' && u.target) {
+    const r = u.target;
+    if (r.amount <= 0) {
+      // Recurso esgotado, procurar outro próximo do mesmo tipo
+      const next = findNearestResource(u, r.type, CONFIG.TILE_SIZE * 12);
+      if (next) {
+        u.target = next;
+        const adj = findNearbyFreeWorldPos(next.x, next.y);
+        u.moveTarget = adj || { x: next.x, y: next.y };
+      } else {
+        u.state = 'idle';
+        u.target = null;
+        u.moveTarget = null;
+      }
+      return;
+    }
+    const d = dist(u, r);
+    if (d < CONFIG.TILE_SIZE * 1.3) {
+      u.moveTarget = null;
+      u.gatherTimer += dt;
+      const ownerObj = getOwner(u);
+      let gatherRate = 1.5; // unidades por segundo
+      if (ownerObj.civ === 'iberos' && r.type === 'gold') gatherRate *= 1.3;
+      const carryMax = 10;
+      if (u.gatherTimer >= 1 / gatherRate) {
+        u.gatherTimer = 0;
+        const give = 1;
+        r.amount -= give;
+        u.carrying = u.carrying || { type: r.type, amount: 0 };
+        u.carrying.amount += give;
+        u.lastResource = r;
+        if (u.carrying.amount >= carryMax || r.amount <= 0) {
+          // Voltar ao depósito
+          u.state = 'returning';
+          const dep = findNearestDeposit(u, r.type);
+          if (dep) {
+            u.target = dep;
+            const adj = findNearbyFreeWorldPos(dep.x, dep.y);
+            u.moveTarget = adj || { x: dep.x, y: dep.y };
+          } else {
+            u.carrying = null;
+            u.state = 'idle';
+          }
+        }
+      }
+    } else if (!u.moveTarget) {
+      const adj = findNearbyFreeWorldPos(r.x, r.y);
+      u.moveTarget = adj || { x: r.x, y: r.y };
+    }
+  }
+
+  // Estado: returning (voltando ao depósito)
+  if (u.state === 'returning' && u.target) {
+    const dep = u.target;
+    if (dep.hp <= 0 || !dep.completed) {
+      const newDep = findNearestDeposit(u, u.carrying ? u.carrying.type : 'wood');
+      if (newDep) {
+        u.target = newDep;
+        u.moveTarget = { x: newDep.x, y: newDep.y };
+      } else {
+        u.state = 'idle';
+        u.carrying = null;
+      }
+      return;
+    }
+    const d = dist(u, dep);
+    if (d < CONFIG.TILE_SIZE * 2) {
+      // Depositar
+      if (u.carrying) {
+        const ownerObj = getOwner(u);
+        ownerObj.resources[u.carrying.type] = (ownerObj.resources[u.carrying.type] || 0) + u.carrying.amount;
+        if (u.owner === 'player') {
+          G.player.lostStats.gathered[u.carrying.type] = (G.player.lostStats.gathered[u.carrying.type] || 0) + u.carrying.amount;
+        }
+        u.carrying = null;
+      }
+      // Voltar para o último recurso
+      if (u.lastResource && u.lastResource.amount > 0) {
+        commandGather(u, u.lastResource);
+      } else {
+        // Procurar outro do mesmo tipo
+        const next = findNearestResource(u, u.lastResource ? u.lastResource.type : null, CONFIG.TILE_SIZE * 15);
+        if (next) commandGather(u, next);
+        else u.state = 'idle';
+      }
+    }
+  }
+
+  // Estado: building (construindo)
+  if (u.state === 'building' && u.target) {
+    const b = u.target;
+    if (b.hp <= 0 || b.completed) {
+      u.state = 'idle';
+      u.target = null;
+      u.moveTarget = null;
+      return;
+    }
+    const d = dist(u, b);
+    if (d < CONFIG.TILE_SIZE * 2) {
+      u.moveTarget = null;
+      // Adicionar progresso
+      const ownerObj = getOwner(u);
+      let speed = 1;
+      if (ownerObj.civ === 'eslavos') speed *= 1.25;
+      const inc = (1 / b.buildTime) * dt * speed;
+      b.buildProgress += inc;
+      b.hp = Math.min(b.maxHp, 1 + (b.maxHp - 1) * b.buildProgress);
+      if (b.buildProgress >= 1) {
+        b.buildProgress = 1;
+        b.completed = true;
+        b.hp = b.maxHp;
+        // Casa adiciona pop
+        if (BUILDINGS[b.type].popBonus) {
+          ownerObj.popMax += BUILDINGS[b.type].popBonus;
+        }
+        u.state = 'idle';
+        u.target = null;
+      }
+    } else if (!u.moveTarget) {
+      const adj = findNearbyFreeWorldPos(b.x, b.y);
+      u.moveTarget = adj || { x: b.x, y: b.y };
+    }
+  }
+
+  // Estado: attacking
+  if (u.state === 'attacking' && u.target) {
+    const t = u.target;
+    if (t.hp <= 0) {
+      u.state = 'idle';
+      u.target = null;
+      u.moveTarget = null;
+      return;
+    }
+    const d = dist(u, t);
+    const attackDist = u.range * CONFIG.TILE_SIZE;
+    if (d <= attackDist + (t.size ? t.size * CONFIG.TILE_SIZE / 2 : 0)) {
+      u.moveTarget = null;
+      u.facing = Math.atan2(t.y - u.y, t.x - u.x);
+      if (u.attackCD <= 0) {
+        u.attackCD = u.cooldown;
+        let dmg = u.damage;
+        if (u.vsCav && t.isCav) dmg *= u.vsCav;
+        if (u.isRanged) {
+          // Projétil
+          G.projectiles.push({
+            x: u.x, y: u.y,
+            tx: t.x, ty: t.y,
+            target: t,
+            damage: dmg,
+            speed: 380,
+            owner: u.owner,
+          });
+        } else {
+          t.hp -= dmg;
+          spawnParticles(t.x, t.y, '#a33', 4);
+          if (t.hp <= 0) onEntityKilled(t, u.owner);
+        }
+      }
+    } else {
+      // Mover em direção
+      u.moveTarget = { x: t.x, y: t.y };
+    }
+  }
+
+  // Movimento
+  if (u.moveTarget) {
+    moveUnit(u, dt);
+  }
+}
+
+function spawnParticles(x, y, color, n = 6) {
+  for (let i = 0; i < n; i++) {
+    G.particles.push({
+      x, y,
+      vx: rand(-50, 50), vy: rand(-80, -10),
+      life: rand(0.4, 0.8), maxLife: 0.8,
+      color,
+      size: rand(2, 4),
+    });
+  }
+}
+
+function onEntityKilled(e, killerOwner) {
+  if (e.isUnit) {
+    spawnParticles(e.x, e.y, '#722', 10);
+  } else if (e.isBuilding) {
+    spawnParticles(e.x, e.y, '#888', 20);
+    spawnParticles(e.x, e.y, '#a44', 12);
+    // Liberar ocupação
+    const def = BUILDINGS[e.type];
+    for (let dy = 0; dy < def.size; dy++)
+      for (let dx = 0; dx < def.size; dx++)
+        if (G.occupancy[e.tileY+dy] && G.occupancy[e.tileY+dy][e.tileX+dx] === e.id)
+          G.occupancy[e.tileY+dy][e.tileX+dx] = 0;
+    // Remover pop bonus
+    if (BUILDINGS[e.type].popBonus) {
+      const o = getOwner(e);
+      o.popMax = Math.max(CONFIG.POP_INITIAL_MAX, o.popMax - BUILDINGS[e.type].popBonus);
+    }
+    // Verificar fim de jogo
+    if (e.type === 'centro') {
+      if (e.owner === 'player') endGame(false);
+      else endGame(true);
+    }
+  }
+}
+
+// ============================================================
+// PROJÉTEIS
+// ============================================================
+function updateProjectiles(dt) {
+  for (let i = G.projectiles.length - 1; i >= 0; i--) {
+    const p = G.projectiles[i];
+    if (!p.target || p.target.hp <= 0) {
+      G.projectiles.splice(i, 1);
+      continue;
+    }
+    p.tx = p.target.x;
+    p.ty = p.target.y;
+    const dx = p.tx - p.x, dy = p.ty - p.y;
+    const d = Math.hypot(dx, dy);
+    if (d < 8) {
+      p.target.hp -= p.damage;
+      spawnParticles(p.target.x, p.target.y, '#a33', 4);
+      if (p.target.hp <= 0) onEntityKilled(p.target, p.owner);
+      G.projectiles.splice(i, 1);
+      continue;
+    }
+    p.x += dx / d * p.speed * dt;
+    p.y += dy / d * p.speed * dt;
+  }
+}
+
+// ============================================================
+// EDIFÍCIOS — TREINAMENTO E TORRES
+// ============================================================
+function updateBuildings(dt) {
+  for (let i = G.buildings.length - 1; i >= 0; i--) {
+    const b = G.buildings[i];
+    if (b.hp <= 0) {
+      G.buildings.splice(i, 1);
+      continue;
+    }
+    if (!b.completed) continue;
+
+    const def = BUILDINGS[b.type];
+
+    // Treinar unidades
+    if (b.trainQueue.length > 0) {
+      const t = b.trainQueue[0];
+      const ownerObj = getOwner(b);
+      // Verificar pop
+      const popUsed = G.units.filter(u => u.owner === b.owner && u.hp > 0).length;
+      if (popUsed >= ownerObj.popMax) {
+        // Espera ter pop
+      } else {
+        b.trainProgress += dt;
+        const tt = UNITS[t].trainTime;
+        if (b.trainProgress >= tt) {
+          b.trainProgress = 0;
+          b.trainQueue.shift();
+          // Spawn unidade ao lado
+          const spawn = findNearbyFreeWorldPos(b.x, b.y, 4);
+          if (spawn) {
+            createUnit(t, spawn.x, spawn.y, b.owner);
+          }
+        }
+      }
+    }
+
+    // Torre atira
+    if (def.attack) {
+      b.attackCD = Math.max(0, b.attackCD - dt);
+      if (b.attackCD <= 0) {
+        const enemyOwner = b.owner === 'player' ? 'ai' : 'player';
+        let best = null, bestD = def.attack.range * CONFIG.TILE_SIZE;
+        for (const u of G.units) {
+          if (u.owner !== enemyOwner || u.hp <= 0) continue;
+          const d = dist(b, u);
+          if (d < bestD) { bestD = d; best = u; }
+        }
+        if (best) {
+          b.attackCD = def.attack.cooldown;
+          G.projectiles.push({
+            x: b.x, y: b.y, tx: best.x, ty: best.y,
+            target: best, damage: def.attack.damage, speed: 400, owner: b.owner,
+          });
+        }
+      }
+    }
+  }
+}
+
+// ============================================================
+// IA
+// ============================================================
+function updateAI(dt) {
+  G.ai.lastBuild = (G.ai.lastBuild || 0) + dt;
+  G.ai.lastTrain = (G.ai.lastTrain || 0) + dt;
+  G.ai.lastAttack = G.ai.lastAttack || 0;
+
+  // Garantir que aldeões estão coletando
+  const aiVillagers = G.units.filter(u => u.owner === 'ai' && u.type === 'aldeao' && u.hp > 0);
+  for (const v of aiVillagers) {
+    if (v.state === 'idle') {
+      // Designar baseado na necessidade
+      const r = G.ai.resources;
+      let needed = 'wood';
+      if (r.food < 100) needed = 'food';
+      else if (r.wood < 200) needed = 'wood';
+      else if (r.gold < 100 && G.ai.aiState !== 'expand') needed = 'gold';
+      else if (r.stone < 100 && G.ai.aiState !== 'expand') needed = 'stone';
+      else needed = 'food';
+      const res = findNearestResource(v, needed, 2000);
+      if (res) commandGather(v, res);
+      else {
+        const any = findNearestResource(v, null, 9999);
+        if (any) commandGather(v, any);
+      }
+    }
+  }
+
+  const aiBuildings = G.buildings.filter(b => b.owner === 'ai');
+  const numHouses = aiBuildings.filter(b => b.type === 'casa').length;
+  const hasQuartel = aiBuildings.some(b => b.type === 'quartel');
+  const hasArqueiros = aiBuildings.some(b => b.type === 'arqueiros');
+  const hasEstabulo = aiBuildings.some(b => b.type === 'estabulo');
+  const hasCeleiro = aiBuildings.some(b => b.type === 'celeiro');
+  const hasSerraria = aiBuildings.some(b => b.type === 'serraria');
+  const numTowers = aiBuildings.filter(b => b.type === 'torre').length;
+
+  const popUsed = G.units.filter(u => u.owner === 'ai' && u.hp > 0).length;
+  const popPressure = popUsed / G.ai.popMax;
+
+  // Construir prioridades
+  if (G.ai.lastBuild > 8) {
+    let want = null;
+    if (popPressure > 0.7 && numHouses < 8) want = 'casa';
+    else if (!hasSerraria) want = 'serraria';
+    else if (!hasCeleiro) want = 'celeiro';
+    else if (aiVillagers.length >= 4 && !hasQuartel) want = 'quartel';
+    else if (G.time > 90 && !hasArqueiros) want = 'arqueiros';
+    else if (G.time > 150 && !hasEstabulo) want = 'estabulo';
+    else if (G.time > 60 && numTowers < 2) want = 'torre';
+    else if (popPressure > 0.6 && numHouses < 12) want = 'casa';
+    else if (Math.random() < 0.3 && numHouses < 15) want = 'casa';
+
+    if (want) {
+      const cost = BUILDINGS[want].cost;
+      if (canAfford(G.ai, cost, G.ai.civ)) {
+        // Posicionar próximo ao centro IA
+        const center = aiBuildings.find(b => b.type === 'centro');
+        if (center) {
+          for (let attempt = 0; attempt < 30; attempt++) {
+            const tx = center.tileX + randi(-10, 10);
+            const ty = center.tileY + randi(-10, 10);
+            if (canPlaceBuilding(want, tx, ty)) {
+              pay(G.ai, cost, G.ai.civ);
+              const b = createBuilding(want, tx, ty, 'ai', false);
+              // Designar um aldeão
+              const builder = aiVillagers.find(v => v.state === 'gathering' || v.state === 'idle');
+              if (builder) commandBuild(builder, b);
+              G.ai.lastBuild = 0;
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Treinar unidades
+  if (G.ai.lastTrain > 5) {
+    const center = aiBuildings.find(b => b.type === 'centro' && b.completed);
+    if (center && aiVillagers.length < 10 && canAfford(G.ai, UNITS.aldeao.cost, G.ai.civ) && popUsed < G.ai.popMax) {
+      pay(G.ai, UNITS.aldeao.cost, G.ai.civ);
+      center.trainQueue.push('aldeao');
+      G.ai.lastTrain = 0;
+    } else if (hasQuartel) {
+      const q = aiBuildings.find(b => b.type === 'quartel' && b.completed);
+      if (q && canAfford(G.ai, UNITS.espadachim.cost, G.ai.civ) && popUsed < G.ai.popMax) {
+        pay(G.ai, UNITS.espadachim.cost, G.ai.civ);
+        q.trainQueue.push(Math.random() < 0.6 ? 'espadachim' : 'lanceiro');
+        G.ai.lastTrain = 0;
+      } else if (hasArqueiros) {
+        const a = aiBuildings.find(b => b.type === 'arqueiros' && b.completed);
+        if (a && canAfford(G.ai, UNITS.arqueiro.cost, G.ai.civ) && popUsed < G.ai.popMax) {
+          pay(G.ai, UNITS.arqueiro.cost, G.ai.civ);
+          a.trainQueue.push('arqueiro');
+          G.ai.lastTrain = 0;
+        }
+      } else if (hasEstabulo && Math.random() < 0.4) {
+        const e = aiBuildings.find(b => b.type === 'estabulo' && b.completed);
+        const cavCost = getUnitCost('cavaleiro', G.ai.civ);
+        if (e && canAfford(G.ai, cavCost, G.ai.civ) && popUsed < G.ai.popMax) {
+          pay(G.ai, cavCost, G.ai.civ);
+          e.trainQueue.push('cavaleiro');
+          G.ai.lastTrain = 0;
+        }
+      }
+    }
+  }
+
+  // Ataque periódico
+  G.ai.lastAttack += dt;
+  const attackDelay = G.ai.lastAttack === 0 ? CONFIG.AI_FIRST_ATTACK : CONFIG.AI_ATTACK_INTERVAL;
+  if (G.time >= CONFIG.AI_FIRST_ATTACK && G.ai.lastAttack >= attackDelay) {
+    const army = G.units.filter(u => u.owner === 'ai' && u.type !== 'aldeao' && u.hp > 0);
+    if (army.length >= 4) {
+      // Localizar centro do jogador
+      const playerCenter = G.buildings.find(b => b.owner === 'player' && b.type === 'centro');
+      if (playerCenter) {
+        for (const a of army) {
+          commandAttack(a, playerCenter);
+        }
+        G.ai.lastAttack = 0;
+        showToast('⚔ Inimigo atacando! ⚔', 3);
+      }
+    }
+  }
+}
+
+// ============================================================
+// PLACEMENT DE EDIFÍCIO
+// ============================================================
+function canPlaceBuilding(type, tx, ty) {
+  const def = BUILDINGS[type];
+  for (let dy = 0; dy < def.size; dy++) {
+    for (let dx = 0; dx < def.size; dx++) {
+      const x = tx + dx, y = ty + dy;
+      if (x < 0 || x >= CONFIG.MAP_W || y < 0 || y >= CONFIG.MAP_H) return false;
+      if (G.map[y][x] === T_WATER) return false;
+      if (G.occupancy[y][x] !== 0) return false;
+    }
+  }
+  return true;
+}
+
+// ============================================================
+// RENDERIZAÇÃO
+// ============================================================
+function drawMap() {
+  const ctx = G.ctx;
+  const cw = G.canvas.width, ch = G.canvas.height;
+  const ts = CONFIG.TILE_SIZE;
+
+  // Determinar tiles visíveis
+  const startX = Math.max(0, Math.floor(G.camera.x / ts) - 1);
+  const startY = Math.max(0, Math.floor(G.camera.y / ts) - 1);
+  const endX = Math.min(CONFIG.MAP_W, Math.ceil((G.camera.x + cw) / ts) + 1);
+  const endY = Math.min(CONFIG.MAP_H, Math.ceil((G.camera.y + ch) / ts) + 1);
+
+  for (let y = startY; y < endY; y++) {
+    for (let x = startX; x < endX; x++) {
+      const t = G.map[y][x];
+      const px = x * ts - G.camera.x;
+      const py = y * ts - G.camera.y;
+      drawTile(ctx, t, px, py, ts, x, y);
+    }
+  }
+}
+
+function drawTile(ctx, t, x, y, s, tx, ty) {
+  // Cor base
+  let base = '#5a7a3a';
+  let variation = ((tx * 7 + ty * 13) % 7) - 3;
+  if (t === T_WATER) base = '#3a6090';
+  else if (t === T_DIRT) base = '#8b6f3a';
+
+  ctx.fillStyle = base;
+  ctx.fillRect(x, y, s, s);
+
+  // Variação sutil
+  if (t === T_GRASS) {
+    ctx.fillStyle = `rgba(${74 + variation*3}, ${110 + variation*3}, ${50 + variation*2}, 0.4)`;
+    ctx.fillRect(x, y, s, s);
+    // Tufos de grama
+    if ((tx * 31 + ty * 17) % 5 === 0) {
+      ctx.fillStyle = 'rgba(120, 150, 70, 0.5)';
+      ctx.fillRect(x + 8, y + 12, 3, 2);
+      ctx.fillRect(x + 22, y + 24, 3, 2);
+    }
+  }
+
+  if (t === T_WATER) {
+    // Ondas
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx.lineWidth = 1;
+    const offset = (G.time * 30) % s;
+    ctx.beginPath();
+    ctx.moveTo(x, y + (offset % 8) + 6);
+    ctx.lineTo(x + s, y + (offset % 8) + 6);
+    ctx.moveTo(x, y + ((offset + 5) % 8) + 18);
+    ctx.lineTo(x + s, y + ((offset + 5) % 8) + 18);
+    ctx.stroke();
+  }
+
+  // Recursos
+  if (t === T_FOREST) {
+    drawTree(ctx, x + s/2, y + s/2, s);
+  } else if (t === T_STONE) {
+    drawStoneRock(ctx, x + s/2, y + s/2, s, tx, ty);
+  } else if (t === T_GOLD) {
+    drawGoldRock(ctx, x + s/2, y + s/2, s, tx, ty);
+  } else if (t === T_FOOD) {
+    drawBush(ctx, x + s/2, y + s/2, s, tx, ty);
+  }
+}
+
+function drawTree(ctx, cx, cy, s) {
+  // Tronco
+  ctx.fillStyle = '#3d2615';
+  ctx.fillRect(cx - 3, cy + 4, 6, 10);
+  // Copa
+  ctx.fillStyle = '#2d5e22';
+  ctx.beginPath();
+  ctx.arc(cx, cy - 2, s * 0.36, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#3a7a2d';
+  ctx.beginPath();
+  ctx.arc(cx - 3, cy - 5, s * 0.22, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx + 4, cy - 3, s * 0.18, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawStoneRock(ctx, cx, cy, s, tx, ty) {
+  ctx.fillStyle = '#6e6c66';
+  ctx.beginPath();
+  ctx.moveTo(cx - 12, cy + 8);
+  ctx.lineTo(cx - 10, cy - 6);
+  ctx.lineTo(cx, cy - 12);
+  ctx.lineTo(cx + 10, cy - 8);
+  ctx.lineTo(cx + 12, cy + 6);
+  ctx.lineTo(cx + 4, cy + 12);
+  ctx.lineTo(cx - 6, cy + 12);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#8b8983';
+  ctx.beginPath();
+  ctx.moveTo(cx - 8, cy - 4);
+  ctx.lineTo(cx - 2, cy - 10);
+  ctx.lineTo(cx + 4, cy - 6);
+  ctx.lineTo(cx + 2, cy + 2);
+  ctx.lineTo(cx - 6, cy + 2);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawGoldRock(ctx, cx, cy, s, tx, ty) {
+  ctx.fillStyle = '#7a6248';
+  ctx.beginPath();
+  ctx.arc(cx, cy + 2, 13, 0, Math.PI * 2);
+  ctx.fill();
+  // Pepitas de ouro
+  ctx.fillStyle = '#d4af37';
+  ctx.beginPath();
+  ctx.arc(cx - 4, cy - 2, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx + 5, cy + 1, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx + 1, cy + 5, 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#f7d35a';
+  ctx.beginPath();
+  ctx.arc(cx - 4, cy - 2, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawBush(ctx, cx, cy, s, tx, ty) {
+  ctx.fillStyle = '#3a5a25';
+  ctx.beginPath();
+  ctx.arc(cx, cy + 2, 10, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#5a7a35';
+  ctx.beginPath();
+  ctx.arc(cx - 3, cy - 1, 5, 0, Math.PI * 2);
+  ctx.fill();
+  // Frutas
+  ctx.fillStyle = '#c8364c';
+  ctx.beginPath();
+  ctx.arc(cx + 3, cy - 1, 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx - 4, cy + 4, 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx + 4, cy + 5, 2, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// === DESENHAR EDIFÍCIOS ===
+function drawBuilding(ctx, b) {
+  const px = b.tileX * CONFIG.TILE_SIZE - G.camera.x;
+  const py = b.tileY * CONFIG.TILE_SIZE - G.camera.y;
+  const w = b.size * CONFIG.TILE_SIZE;
+  const h = b.size * CONFIG.TILE_SIZE;
+  const ownerObj = getOwner(b);
+  const civColor = CIVS[ownerObj.civ].color;
+  const accent = CIVS[ownerObj.civ].accent;
+
+  // Sombra
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(px + w/2, py + h - 3, w/2.2, h/6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Se em construção, transparente / scaffolding
+  if (!b.completed) {
+    ctx.globalAlpha = 0.55;
+  }
+
+  // Base do edifício
+  switch (b.type) {
+    case 'centro': drawCentro(ctx, px, py, w, h, civColor, accent); break;
+    case 'casa': drawCasa(ctx, px, py, w, h, civColor, accent); break;
+    case 'serraria': drawSerraria(ctx, px, py, w, h, civColor, accent); break;
+    case 'celeiro': drawCeleiro(ctx, px, py, w, h, civColor, accent); break;
+    case 'mineracao': drawMineracao(ctx, px, py, w, h, civColor, accent); break;
+    case 'quartel': drawQuartel(ctx, px, py, w, h, civColor, accent); break;
+    case 'arqueiros': drawArqueiros(ctx, px, py, w, h, civColor, accent); break;
+    case 'estabulo': drawEstabulo(ctx, px, py, w, h, civColor, accent); break;
+    case 'torre': drawTorre(ctx, px, py, w, h, civColor, accent); break;
+    case 'muralha': drawMuralha(ctx, px, py, w, h, civColor, accent); break;
+  }
+
+  ctx.globalAlpha = 1;
+
+  // Barra de construção
+  if (!b.completed) {
+    const barW = w * 0.8;
+    const barH = 5;
+    const bx = px + w/2 - barW/2;
+    const by = py - 10;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(bx, by, barW, barH);
+    ctx.fillStyle = '#d4af37';
+    ctx.fillRect(bx, by, barW * b.buildProgress, barH);
+  }
+
+  // Barra de vida (se danificado ou selecionado)
+  const isSelected = G.selected.includes(b.id);
+  if (b.hp < b.maxHp || isSelected) {
+    const barW = w * 0.8;
+    const barH = 4;
+    const bx = px + w/2 - barW/2;
+    const by = py - 6;
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(bx, by, barW, barH);
+    const ratio = b.hp / b.maxHp;
+    ctx.fillStyle = ratio > 0.5 ? '#5fc850' : ratio > 0.25 ? '#d4a017' : '#c8364c';
+    ctx.fillRect(bx, by, barW * ratio, barH);
+  }
+
+  // Borda de seleção
+  if (isSelected) {
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 3]);
+    ctx.strokeRect(px + 1, py + 1, w - 2, h - 2);
+    ctx.setLineDash([]);
+  }
+
+  // Indicador de dono
+  if (b.completed) {
+    ctx.fillStyle = b.owner === 'player' ? '#3fc850' : '#d44';
+    ctx.beginPath();
+    ctx.arc(px + 5, py + 5, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawCentro(ctx, x, y, w, h, color, accent) {
+  // Castelo central com 4 torres
+  const cx = x + w/2, cy = y + h/2;
+  // Base
+  ctx.fillStyle = '#bba783';
+  ctx.fillRect(x + 8, y + 14, w - 16, h - 18);
+  // Detalhes de tijolos
+  ctx.fillStyle = '#9a8868';
+  for (let i = 0; i < 3; i++)
+    ctx.fillRect(x + 10 + i*16, y + 30, 12, 2);
+  // Torres dos cantos
+  ctx.fillStyle = color;
+  ctx.fillRect(x + 4, y + 6, 14, h - 12);
+  ctx.fillRect(x + w - 18, y + 6, 14, h - 12);
+  // Telhados das torres
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.moveTo(x + 2, y + 8);
+  ctx.lineTo(x + 11, y - 4);
+  ctx.lineTo(x + 20, y + 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x + w - 20, y + 8);
+  ctx.lineTo(x + w - 11, y - 4);
+  ctx.lineTo(x + w - 2, y + 8);
+  ctx.closePath();
+  ctx.fill();
+  // Portão
+  ctx.fillStyle = '#3d2615';
+  ctx.fillRect(cx - 7, y + h - 16, 14, 14);
+  ctx.fillStyle = '#1a0f0a';
+  ctx.fillRect(cx - 5, y + h - 14, 10, 12);
+  // Bandeira
+  ctx.fillStyle = '#5a3a1a';
+  ctx.fillRect(cx - 1, y - 2, 2, 12);
+  ctx.fillStyle = color;
+  ctx.fillRect(cx + 1, y - 2, 8, 5);
+}
+
+function drawCasa(ctx, x, y, w, h, color, accent) {
+  // Parede
+  ctx.fillStyle = '#cfb88a';
+  ctx.fillRect(x + 6, y + 18, w - 12, h - 22);
+  // Telhado
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.moveTo(x + 2, y + 22);
+  ctx.lineTo(x + w/2, y + 4);
+  ctx.lineTo(x + w - 2, y + 22);
+  ctx.closePath();
+  ctx.fill();
+  // Telhado destacado
+  ctx.fillStyle = '#7a4a1f';
+  ctx.beginPath();
+  ctx.moveTo(x + 2, y + 22);
+  ctx.lineTo(x + w/2, y + 4);
+  ctx.lineTo(x + w - 2, y + 22);
+  ctx.closePath();
+  ctx.stroke();
+  // Porta
+  ctx.fillStyle = '#3d2615';
+  ctx.fillRect(x + w/2 - 4, y + h - 14, 8, 12);
+  // Janela
+  ctx.fillStyle = '#5a4a2a';
+  ctx.fillRect(x + 10, y + 26, 6, 6);
+}
+
+function drawSerraria(ctx, x, y, w, h, color, accent) {
+  // Construção de madeira
+  ctx.fillStyle = '#7a4a23';
+  ctx.fillRect(x + 6, y + 14, w - 12, h - 18);
+  // Telhado
+  ctx.fillStyle = '#5a3315';
+  ctx.beginPath();
+  ctx.moveTo(x + 4, y + 18);
+  ctx.lineTo(x + w/2, y + 2);
+  ctx.lineTo(x + w - 4, y + 18);
+  ctx.closePath();
+  ctx.fill();
+  // Tora de madeira
+  ctx.fillStyle = '#a8703f';
+  ctx.fillRect(x + 8, y + h - 10, w - 16, 6);
+  // Serra
+  ctx.strokeStyle = '#888';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x + w - 14, y + h - 7);
+  ctx.lineTo(x + w - 6, y + h - 14);
+  ctx.stroke();
+}
+
+function drawCeleiro(ctx, x, y, w, h, color, accent) {
+  // Parede
+  ctx.fillStyle = '#c8a06a';
+  ctx.fillRect(x + 4, y + 16, w - 8, h - 20);
+  // Telhado curvado (estilo silo)
+  ctx.fillStyle = '#7a4a1f';
+  ctx.beginPath();
+  ctx.arc(x + w/2, y + 18, w/2 - 2, Math.PI, 0);
+  ctx.closePath();
+  ctx.fill();
+  // Porta dupla
+  ctx.fillStyle = '#3d2615';
+  ctx.fillRect(x + w/2 - 8, y + h - 16, 16, 14);
+  ctx.strokeStyle = '#1a0f0a';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x + w/2, y + h - 16);
+  ctx.lineTo(x + w/2, y + h - 2);
+  ctx.stroke();
+  // Trigo decorativo
+  ctx.fillStyle = '#d4a017';
+  ctx.fillRect(x + 8, y + h - 6, 3, 5);
+  ctx.fillRect(x + w - 11, y + h - 6, 3, 5);
+}
+
+function drawMineracao(ctx, x, y, w, h, color, accent) {
+  // Estrutura
+  ctx.fillStyle = '#8a7a5a';
+  ctx.fillRect(x + 6, y + 14, w - 12, h - 18);
+  // Estrutura de madeira em V
+  ctx.strokeStyle = '#5a3315';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(x + 10, y + h - 4);
+  ctx.lineTo(x + w/2, y + 2);
+  ctx.lineTo(x + w - 10, y + h - 4);
+  ctx.stroke();
+  // Carrinho
+  ctx.fillStyle = '#3d2615';
+  ctx.fillRect(x + 12, y + h - 12, 12, 6);
+  ctx.fillStyle = '#1a0f0a';
+  ctx.beginPath();
+  ctx.arc(x + 14, y + h - 6, 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x + 22, y + h - 6, 2, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawQuartel(ctx, x, y, w, h, color, accent) {
+  // Edifício militar com paliçada
+  ctx.fillStyle = '#5a4a3a';
+  ctx.fillRect(x + 4, y + 12, w - 8, h - 16);
+  // Telhado plano militar
+  ctx.fillStyle = '#3a2818';
+  ctx.fillRect(x + 2, y + 10, w - 4, 6);
+  // Bandeira / cor do povo
+  ctx.fillStyle = color;
+  ctx.fillRect(x + w/2 - 8, y + 18, 16, 12);
+  ctx.fillStyle = accent;
+  ctx.fillRect(x + w/2 - 2, y + 18, 4, 12);
+  // Espadas cruzadas
+  ctx.strokeStyle = '#aaa';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x + w/2 - 5, y + 22);
+  ctx.lineTo(x + w/2 + 5, y + 28);
+  ctx.moveTo(x + w/2 + 5, y + 22);
+  ctx.lineTo(x + w/2 - 5, y + 28);
+  ctx.stroke();
+  // Porta
+  ctx.fillStyle = '#1a0f0a';
+  ctx.fillRect(x + w/2 - 5, y + h - 12, 10, 10);
+}
+
+function drawArqueiros(ctx, x, y, w, h, color, accent) {
+  ctx.fillStyle = '#8a6a3a';
+  ctx.fillRect(x + 4, y + 14, w - 8, h - 18);
+  // Telhado pontudo
+  ctx.fillStyle = '#5a3315';
+  ctx.beginPath();
+  ctx.moveTo(x + 2, y + 18);
+  ctx.lineTo(x + w/2, y + 4);
+  ctx.lineTo(x + w - 2, y + 18);
+  ctx.closePath();
+  ctx.fill();
+  // Alvo de tiro
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(x + w/2, y + 26, 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#c8364c';
+  ctx.beginPath();
+  ctx.arc(x + w/2, y + 26, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(x + w/2, y + 26, 2, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawEstabulo(ctx, x, y, w, h, color, accent) {
+  ctx.fillStyle = '#7a4a2a';
+  ctx.fillRect(x + 4, y + 14, w - 8, h - 18);
+  // Telhado de palha
+  ctx.fillStyle = '#a07835';
+  ctx.beginPath();
+  ctx.moveTo(x + 2, y + 18);
+  ctx.lineTo(x + w/2, y + 4);
+  ctx.lineTo(x + w - 2, y + 18);
+  ctx.closePath();
+  ctx.fill();
+  // Porta dupla com cavalo silhueta
+  ctx.fillStyle = '#1a0f0a';
+  ctx.fillRect(x + w/2 - 9, y + h - 14, 18, 12);
+  ctx.fillStyle = '#3d2615';
+  // Silhueta de cavalo
+  ctx.fillRect(x + w/2 - 5, y + h - 11, 10, 3);
+  ctx.fillRect(x + w/2 - 5, y + h - 8, 3, 5);
+  ctx.fillRect(x + w/2 + 2, y + h - 8, 3, 5);
+  ctx.fillRect(x + w/2 + 4, y + h - 13, 2, 4);
+}
+
+function drawTorre(ctx, x, y, w, h, color, accent) {
+  // Torre alta
+  const cx = x + w/2;
+  // Base
+  ctx.fillStyle = '#7a7068';
+  ctx.fillRect(cx - 13, y + 18, 26, h - 22);
+  // Topo
+  ctx.fillStyle = '#9a9088';
+  ctx.fillRect(cx - 16, y + 14, 32, 8);
+  // Ameias
+  for (let i = 0; i < 4; i++) {
+    ctx.fillRect(cx - 14 + i*8, y + 10, 4, 6);
+  }
+  // Janela
+  ctx.fillStyle = '#1a0f0a';
+  ctx.fillRect(cx - 3, y + 26, 6, 8);
+  // Bandeira
+  ctx.fillStyle = '#5a3a1a';
+  ctx.fillRect(cx - 1, y, 2, 12);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(cx + 1, y);
+  ctx.lineTo(cx + 8, y + 3);
+  ctx.lineTo(cx + 1, y + 6);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawMuralha(ctx, x, y, w, h, color, accent) {
+  ctx.fillStyle = '#7a7068';
+  ctx.fillRect(x + 2, y + 6, w - 4, h - 8);
+  // Ameias
+  ctx.fillStyle = '#9a9088';
+  for (let i = 0; i < 3; i++) {
+    ctx.fillRect(x + 2 + i*10, y + 2, 5, 6);
+  }
+  // Linhas de pedras
+  ctx.strokeStyle = '#5a5048';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x + 4, y + 18);
+  ctx.lineTo(x + w - 4, y + 18);
+  ctx.moveTo(x + 4, y + 28);
+  ctx.lineTo(x + w - 4, y + 28);
+  ctx.stroke();
+}
+
+// === DESENHAR UNIDADES ===
+function drawUnit(ctx, u) {
+  const x = u.x - G.camera.x;
+  const y = u.y - G.camera.y;
+  const ownerObj = getOwner(u);
+  const civColor = CIVS[ownerObj.civ].color;
+  const accent = CIVS[ownerObj.civ].accent;
+  const isPlayer = u.owner === 'player';
+
+  // Sombra
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(x, y + 10, 8, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  switch (u.type) {
+    case 'aldeao': drawAldeao(ctx, x, y, civColor, u); break;
+    case 'espadachim': drawEspadachim(ctx, x, y, civColor, accent, u); break;
+    case 'lanceiro': drawLanceiro(ctx, x, y, civColor, accent, u); break;
+    case 'arqueiro': drawArqueiroUnit(ctx, x, y, civColor, accent, u); break;
+    case 'cavaleiro': drawCavaleiro(ctx, x, y, civColor, accent, u); break;
+  }
+
+  // Anel de seleção
+  const selected = G.selected.includes(u.id);
+  if (selected) {
+    ctx.strokeStyle = isPlayer ? '#d4af37' : '#d44';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(x, y + 10, 11, 4, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Barra de vida
+  if (u.hp < u.maxHp || selected) {
+    const barW = 18;
+    const barH = 3;
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(x - barW/2, y - 14, barW, barH);
+    const ratio = u.hp / u.maxHp;
+    ctx.fillStyle = ratio > 0.5 ? '#5fc850' : ratio > 0.25 ? '#d4a017' : '#c8364c';
+    ctx.fillRect(x - barW/2, y - 14, barW * ratio, barH);
+  }
+
+  // Indicador de carregando recurso
+  if (u.carrying && u.carrying.amount > 0) {
+    const colors = { wood: '#a8703f', food: '#c8364c', gold: '#d4af37', stone: '#9a9a9a' };
+    ctx.fillStyle = colors[u.carrying.type] || '#fff';
+    ctx.fillRect(x - 2, y - 18, 4, 4);
+  }
+}
+
+function drawAldeao(ctx, x, y, color, u) {
+  // Cabeça
+  ctx.fillStyle = '#e8c094';
+  ctx.beginPath();
+  ctx.arc(x, y - 4, 3, 0, Math.PI * 2);
+  ctx.fill();
+  // Corpo (túnica do povo)
+  ctx.fillStyle = color;
+  ctx.fillRect(x - 4, y - 1, 8, 9);
+  // Pernas
+  ctx.fillStyle = '#5a3a1a';
+  ctx.fillRect(x - 3, y + 7, 2, 4);
+  ctx.fillRect(x + 1, y + 7, 2, 4);
+  // Ferramenta (martelo)
+  ctx.fillStyle = '#3d2615';
+  ctx.fillRect(x + 3, y - 2, 1, 6);
+  ctx.fillStyle = '#9a9088';
+  ctx.fillRect(x + 2, y - 3, 4, 2);
+}
+
+function drawEspadachim(ctx, x, y, color, accent, u) {
+  // Cabeça com elmo
+  ctx.fillStyle = '#9a9088';
+  ctx.beginPath();
+  ctx.arc(x, y - 5, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+  // Visor
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(x - 2, y - 5, 4, 1);
+  // Corpo armadura
+  ctx.fillStyle = '#888880';
+  ctx.fillRect(x - 5, y - 1, 10, 9);
+  // Cor do povo (manto)
+  ctx.fillStyle = color;
+  ctx.fillRect(x - 5, y - 1, 2, 9);
+  ctx.fillRect(x + 3, y - 1, 2, 9);
+  // Pernas
+  ctx.fillStyle = '#5a3a1a';
+  ctx.fillRect(x - 3, y + 8, 2, 3);
+  ctx.fillRect(x + 1, y + 8, 2, 3);
+  // Espada
+  ctx.strokeStyle = '#ddd';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x + 6, y - 4);
+  ctx.lineTo(x + 8, y + 4);
+  ctx.stroke();
+  // Escudo
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.arc(x - 6, y + 2, 3, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawLanceiro(ctx, x, y, color, accent, u) {
+  // Cabeça
+  ctx.fillStyle = '#e8c094';
+  ctx.beginPath();
+  ctx.arc(x, y - 5, 3, 0, Math.PI * 2);
+  ctx.fill();
+  // Corpo
+  ctx.fillStyle = color;
+  ctx.fillRect(x - 4, y - 2, 8, 9);
+  // Pernas
+  ctx.fillStyle = '#5a3a1a';
+  ctx.fillRect(x - 3, y + 7, 2, 4);
+  ctx.fillRect(x + 1, y + 7, 2, 4);
+  // Lança
+  ctx.strokeStyle = '#7a4a23';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x + 4, y - 8);
+  ctx.lineTo(x + 4, y + 8);
+  ctx.stroke();
+  // Ponta
+  ctx.fillStyle = '#aaa';
+  ctx.beginPath();
+  ctx.moveTo(x + 4, y - 10);
+  ctx.lineTo(x + 6, y - 7);
+  ctx.lineTo(x + 2, y - 7);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawArqueiroUnit(ctx, x, y, color, accent, u) {
+  // Cabeça com capuz
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.arc(x, y - 5, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+  // Corpo
+  ctx.fillStyle = color;
+  ctx.fillRect(x - 4, y - 2, 8, 9);
+  // Pernas
+  ctx.fillStyle = '#3d2615';
+  ctx.fillRect(x - 3, y + 7, 2, 4);
+  ctx.fillRect(x + 1, y + 7, 2, 4);
+  // Arco
+  ctx.strokeStyle = '#7a4a23';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(x + 5, y + 2, 4, -Math.PI/2.2, Math.PI/2.2);
+  ctx.stroke();
+  // Corda
+  ctx.strokeStyle = '#ddd';
+  ctx.lineWidth = 0.5;
+  ctx.beginPath();
+  ctx.moveTo(x + 5, y - 1);
+  ctx.lineTo(x + 5, y + 5);
+  ctx.stroke();
+}
+
+function drawCavaleiro(ctx, x, y, color, accent, u) {
+  // Cavalo
+  ctx.fillStyle = '#5a3a1a';
+  ctx.fillRect(x - 7, y + 1, 14, 7);
+  ctx.fillRect(x - 8, y - 1, 4, 6);
+  // Pernas
+  ctx.fillRect(x - 6, y + 8, 2, 4);
+  ctx.fillRect(x - 2, y + 8, 2, 4);
+  ctx.fillRect(x + 2, y + 8, 2, 4);
+  ctx.fillRect(x + 5, y + 8, 2, 4);
+  // Crina
+  ctx.fillStyle = '#1a0f0a';
+  ctx.fillRect(x - 8, y - 2, 4, 2);
+  // Cavaleiro
+  ctx.fillStyle = '#9a9088';
+  ctx.beginPath();
+  ctx.arc(x, y - 8, 3, 0, Math.PI * 2);
+  ctx.fill();
+  // Manto/cor do povo
+  ctx.fillStyle = color;
+  ctx.fillRect(x - 4, y - 5, 8, 7);
+  // Lança
+  ctx.strokeStyle = '#7a4a23';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x + 6, y - 12);
+  ctx.lineTo(x + 6, y + 4);
+  ctx.stroke();
+  ctx.fillStyle = '#aaa';
+  ctx.beginPath();
+  ctx.moveTo(x + 6, y - 14);
+  ctx.lineTo(x + 8, y - 10);
+  ctx.lineTo(x + 4, y - 10);
+  ctx.closePath();
+  ctx.fill();
+}
+
+// === PROJÉTEIS E PARTÍCULAS ===
+function drawProjectiles() {
+  const ctx = G.ctx;
+  for (const p of G.projectiles) {
+    const x = p.x - G.camera.x;
+    const y = p.y - G.camera.y;
+    const angle = Math.atan2(p.ty - p.y, p.tx - p.x);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.strokeStyle = '#5a3a1a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-6, 0);
+    ctx.lineTo(6, 0);
+    ctx.stroke();
+    ctx.fillStyle = '#aaa';
+    ctx.beginPath();
+    ctx.moveTo(6, 0);
+    ctx.lineTo(2, -2);
+    ctx.lineTo(2, 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function drawParticles() {
+  const ctx = G.ctx;
+  for (const p of G.particles) {
+    const alpha = p.life / p.maxLife;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - G.camera.x - p.size/2, p.y - G.camera.y - p.size/2, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function updateParticles(dt) {
+  for (let i = G.particles.length - 1; i >= 0; i--) {
+    const p = G.particles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += 200 * dt; // gravidade
+    p.life -= dt;
+    if (p.life <= 0) G.particles.splice(i, 1);
+  }
+}
+
+// === SELECTION BOX ===
+function drawSelectionBox() {
+  if (!G.selectionBox) return;
+  const ctx = G.ctx;
+  const sb = G.selectionBox;
+  const x = Math.min(sb.x1, sb.x2);
+  const y = Math.min(sb.y1, sb.y2);
+  const w = Math.abs(sb.x2 - sb.x1);
+  const h = Math.abs(sb.y2 - sb.y1);
+  ctx.strokeStyle = '#d4af37';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 3]);
+  ctx.strokeRect(x, y, w, h);
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(212, 175, 55, 0.1)';
+  ctx.fillRect(x, y, w, h);
+}
+
+// === PLACEMENT PREVIEW ===
+function drawPlacementPreview() {
+  if (!G.pendingBuild) return;
+  const ctx = G.ctx;
+  const t = worldToTile(G.mouse.x + G.camera.x, G.mouse.y + G.camera.y);
+  const def = BUILDINGS[G.pendingBuild.type];
+  // Snap (centralizar no cursor)
+  const tx = t.tx - Math.floor(def.size/2);
+  const ty = t.ty - Math.floor(def.size/2);
+  const valid = canPlaceBuilding(G.pendingBuild.type, tx, ty);
+  const px = tx * CONFIG.TILE_SIZE - G.camera.x;
+  const py = ty * CONFIG.TILE_SIZE - G.camera.y;
+  const w = def.size * CONFIG.TILE_SIZE;
+  const h = def.size * CONFIG.TILE_SIZE;
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = valid ? 'rgba(80, 200, 80, 0.3)' : 'rgba(220, 60, 60, 0.4)';
+  ctx.fillRect(px, py, w, h);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = valid ? '#3fc850' : '#d44';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(px, py, w, h);
+}
+
+// === MINIMAP ===
+function drawMinimap() {
+  const ctx = G.miniCtx;
+  const cw = G.miniCanvas.width;
+  const ch = G.miniCanvas.height;
+  const sx = cw / (CONFIG.MAP_W * CONFIG.TILE_SIZE);
+  const sy = ch / (CONFIG.MAP_H * CONFIG.TILE_SIZE);
+  // Fundo
+  ctx.fillStyle = '#3a4a25';
+  ctx.fillRect(0, 0, cw, ch);
+  // Terreno
+  for (let y = 0; y < CONFIG.MAP_H; y++) {
+    for (let x = 0; x < CONFIG.MAP_W; x++) {
+      const t = G.map[y][x];
+      const px = x * CONFIG.TILE_SIZE * sx;
+      const py = y * CONFIG.TILE_SIZE * sy;
+      const w = CONFIG.TILE_SIZE * sx + 1;
+      const h = CONFIG.TILE_SIZE * sy + 1;
+      if (t === T_WATER) ctx.fillStyle = '#3a6090';
+      else if (t === T_FOREST) ctx.fillStyle = '#2d5e22';
+      else if (t === T_STONE) ctx.fillStyle = '#7a7068';
+      else if (t === T_GOLD) ctx.fillStyle = '#d4af37';
+      else if (t === T_FOOD) ctx.fillStyle = '#c8364c';
+      else continue;
+      ctx.fillRect(px, py, w, h);
+    }
+  }
+  // Edifícios
+  for (const b of G.buildings) {
+    const px = b.tileX * CONFIG.TILE_SIZE * sx;
+    const py = b.tileY * CONFIG.TILE_SIZE * sy;
+    const w = b.size * CONFIG.TILE_SIZE * sx;
+    const h = b.size * CONFIG.TILE_SIZE * sy;
+    ctx.fillStyle = b.owner === 'player' ? '#5fc850' : '#d44';
+    ctx.fillRect(px, py, Math.max(3, w), Math.max(3, h));
+  }
+  // Unidades
+  for (const u of G.units) {
+    if (u.hp <= 0) continue;
+    const px = u.x * sx;
+    const py = u.y * sy;
+    ctx.fillStyle = u.owner === 'player' ? '#5fc850' : '#d44';
+    ctx.fillRect(px - 1, py - 1, 3, 3);
+  }
+  // Viewport
+  const vx = G.camera.x * sx;
+  const vy = G.camera.y * sy;
+  const vw = G.canvas.width * sx;
+  const vh = G.canvas.height * sy;
+  ctx.strokeStyle = '#d4af37';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(vx, vy, vw, vh);
+}
+
+// ============================================================
+// LOOP PRINCIPAL
+// ============================================================
+let lastT = 0;
+function gameLoop(t) {
+  const dt = Math.min(0.1, (t - lastT) / 1000);
+  lastT = t;
+
+  if (!G.paused && !G.gameOver) {
+    G.time += dt;
+    update(dt);
+  }
+  render();
+
+  // Toast timer
+  if (G.toastTimer > 0) {
+    G.toastTimer -= dt;
+    if (G.toastTimer <= 0) document.getElementById('toast').style.display = 'none';
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+function update(dt) {
+  // Scroll de borda
+  const edge = 50;
+  const speed = 600;
+  if (G.mouse.x < edge && G.mouse.x >= 0) G.camera.x -= speed * dt;
+  if (G.mouse.x > G.canvas.width - edge) G.camera.x += speed * dt;
+  if (G.mouse.y < edge + 50 && G.mouse.y >= 50) G.camera.y -= speed * dt;
+  if (G.mouse.y > G.canvas.height - edge - 160) G.camera.y += speed * dt;
+  G.camera.x = clamp(G.camera.x, 0, CONFIG.MAP_W * CONFIG.TILE_SIZE - G.canvas.width);
+  G.camera.y = clamp(G.camera.y, 0, CONFIG.MAP_H * CONFIG.TILE_SIZE - G.canvas.height);
+
+  // Update unidades
+  for (let i = G.units.length - 1; i >= 0; i--) {
+    const u = G.units[i];
+    if (u.hp <= 0) {
+      G.units.splice(i, 1);
+      continue;
+    }
+    updateUnit(u, dt);
+  }
+
+  // Update edifícios
+  updateBuildings(dt);
+
+  // Update projéteis
+  updateProjectiles(dt);
+
+  // Update partículas
+  updateParticles(dt);
+
+  // IA
+  updateAI(dt);
+
+  // Atualizar HUD
+  updateHUD();
+}
+
+function render() {
+  const ctx = G.ctx;
+  ctx.fillStyle = '#1a2810';
+  ctx.fillRect(0, 0, G.canvas.width, G.canvas.height);
+
+  drawMap();
+
+  // Ordenar entidades por Y para depth
+  const sortable = [];
+  for (const b of G.buildings) sortable.push({ y: b.y + b.size * CONFIG.TILE_SIZE / 2, draw: () => drawBuilding(ctx, b) });
+  for (const u of G.units) sortable.push({ y: u.y, draw: () => drawUnit(ctx, u) });
+  sortable.sort((a, b) => a.y - b.y);
+  for (const s of sortable) s.draw();
+
+  drawProjectiles();
+  drawParticles();
+  drawPlacementPreview();
+  drawSelectionBox();
+  drawMinimap();
+}
+
+// ============================================================
+// HUD UPDATE
+// ============================================================
+function updateHUD() {
+  document.getElementById('r-wood').textContent = Math.floor(G.player.resources.wood);
+  document.getElementById('r-food').textContent = Math.floor(G.player.resources.food);
+  document.getElementById('r-gold').textContent = Math.floor(G.player.resources.gold);
+  document.getElementById('r-stone').textContent = Math.floor(G.player.resources.stone);
+
+  const popUsed = G.units.filter(u => u.owner === 'player' && u.hp > 0).length;
+  document.getElementById('hud-info-pop').textContent = `${popUsed}/${G.player.popMax}`;
+  const m = Math.floor(G.time / 60);
+  const s = Math.floor(G.time % 60);
+  document.getElementById('hud-info-time').textContent = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+
+  updateSelectionPanel();
+}
+
+function updateSelectionPanel() {
+  const titleEl = document.getElementById('sel-title');
+  const statsEl = document.getElementById('sel-stats');
+  const actionsEl = document.getElementById('actions-panel');
+
+  if (G.selected.length === 0) {
+    titleEl.textContent = 'Sem seleção';
+    statsEl.innerHTML = 'Clique em uma unidade ou edifício';
+    actionsEl.innerHTML = '';
+    return;
+  }
+
+  // Buscar entidades selecionadas
+  const ents = [];
+  for (const id of G.selected) {
+    const u = G.units.find(u => u.id === id);
+    if (u) { ents.push(u); continue; }
+    const b = G.buildings.find(b => b.id === id);
+    if (b) { ents.push(b); continue; }
+  }
+  if (ents.length === 0) {
+    G.selected = [];
+    return updateSelectionPanel();
+  }
+
+  if (ents.length === 1) {
+    const e = ents[0];
+    titleEl.textContent = e.name;
+    if (e.isUnit) {
+      statsEl.innerHTML = `
+        <div>HP: ${Math.ceil(e.hp)}/${e.maxHp}</div>
+        <div>Dano: ${e.damage} · Alcance: ${e.range}</div>
+        <div>Estado: ${stateLabel(e.state)}</div>
+        ${e.carrying ? `<div>Carregando: ${Math.floor(e.carrying.amount)} ${resLabel(e.carrying.type)}</div>` : ''}
+      `;
+    } else {
+      statsEl.innerHTML = `
+        <div>HP: ${Math.ceil(e.hp)}/${e.maxHp}</div>
+        ${!e.completed ? `<div>Construindo: ${Math.floor(e.buildProgress * 100)}%</div>` : ''}
+        ${e.trainQueue.length > 0 ? `<div>Treinando: ${UNITS[e.trainQueue[0]].name} (${Math.floor(e.trainProgress / UNITS[e.trainQueue[0]].trainTime * 100)}%) · Fila: ${e.trainQueue.length}</div>` : ''}
+      `;
+    }
+    renderActions(e, ents);
+  } else {
+    titleEl.textContent = `${ents.length} unidades`;
+    const types = {};
+    for (const e of ents) types[e.name] = (types[e.name] || 0) + 1;
+    statsEl.innerHTML = Object.entries(types).map(([n,c]) => `<div>${n} × ${c}</div>`).join('');
+    renderActions(ents[0], ents);
+  }
+}
+
+function stateLabel(s) {
+  const m = { idle: 'Parado', moving: 'Movendo', attacking: 'Atacando', gathering: 'Coletando', returning: 'Retornando', building: 'Construindo' };
+  return m[s] || s;
+}
+function resLabel(r) { return { wood: 'madeira', food: 'comida', gold: 'ouro', stone: 'pedra' }[r] || r; }
+
+function renderActions(e, ents) {
+  const actionsEl = document.getElementById('actions-panel');
+  actionsEl.innerHTML = '';
+  if (e.owner !== 'player') return;
+
+  if (e.isUnit) {
+    if (e.canGather) {
+      // Aldeão: botões de construção
+      const buildables = ['casa','serraria','celeiro','mineracao','quartel','arqueiros','estabulo','torre','muralha'];
+      for (const bt of buildables) {
+        addActionBtn(actionsEl, BUILDINGS[bt].name, BUILDINGS[bt].cost, () => {
+          G.pendingBuild = { type: bt };
+          document.body.classList.add('placing');
+          showToast(`Selecione local para ${BUILDINGS[bt].name}`);
+        }, BUILDINGS[bt], null);
+      }
+    }
+    addActionBtn(actionsEl, 'Parar', null, () => {
+      for (const u of ents) {
+        if (u.isUnit) {
+          u.state = 'idle';
+          u.target = null;
+          u.moveTarget = null;
+        }
+      }
+    }, null, '⏹');
+  } else if (e.isBuilding && e.completed) {
+    const def = BUILDINGS[e.type];
+    if (def.trains) {
+      for (const ut of def.trains) {
+        const cost = getUnitCost(ut, G.player.civ);
+        addActionBtn(actionsEl, `Treinar ${UNITS[ut].name}`, cost, () => {
+          if (canAfford(G.player, cost, G.player.civ)) {
+            const popUsed = G.units.filter(u => u.owner === 'player' && u.hp > 0).length + G.buildings.reduce((a,b) => a + (b.owner === 'player' ? b.trainQueue.length : 0), 0);
+            if (popUsed >= G.player.popMax) {
+              showToast('Construa mais Casas para aumentar a população!');
+              return;
+            }
+            pay(G.player, cost, G.player.civ);
+            e.trainQueue.push(ut);
+          } else {
+            showToast('Recursos insuficientes!');
+          }
+        }, null, null);
+      }
+    }
+    if (e.type === 'centro') {
+      addActionBtn(actionsEl, `Treinar Aldeão`, UNITS.aldeao.cost, () => {
+        const cost = UNITS.aldeao.cost;
+        if (canAfford(G.player, cost, G.player.civ)) {
+          const popUsed = G.units.filter(u => u.owner === 'player' && u.hp > 0).length + G.buildings.reduce((a,b) => a + (b.owner === 'player' ? b.trainQueue.length : 0), 0);
+          if (popUsed >= G.player.popMax) {
+            showToast('Construa mais Casas para aumentar a população!');
+            return;
+          }
+          pay(G.player, cost, G.player.civ);
+          e.trainQueue.push('aldeao');
+        } else {
+          showToast('Recursos insuficientes!');
+        }
+      }, null, null);
+    }
+  }
+}
+
+function addActionBtn(parent, label, cost, onClick, buildingDef, icon) {
+  const btn = document.createElement('button');
+  btn.className = 'action-btn';
+  let costHTML = '';
+  if (cost) {
+    const c = {...cost};
+    // Aplicar bônus de saxões para muralhas
+    if (G.player.civ === 'saxoes' && buildingDef && buildingDef.name === 'Muralha' && c.stone) c.stone = Math.round(c.stone * 0.5);
+    const parts = [];
+    if (c.wood) parts.push(`<span>🪵${c.wood}</span>`);
+    if (c.food) parts.push(`<span>🍎${c.food}</span>`);
+    if (c.gold) parts.push(`<span>⚜${c.gold}</span>`);
+    if (c.stone) parts.push(`<span>⛰${c.stone}</span>`);
+    costHTML = `<span class="action-cost">${parts.join('')}</span>`;
+  }
+  btn.innerHTML = `<div style="font-size:0.7rem;font-weight:700;line-height:1;margin-bottom:2px;">${label}</div>${costHTML}`;
+  btn.onclick = onClick;
+  if (cost && !canAfford(G.player, cost, G.player.civ)) {
+    btn.disabled = true;
+  }
+  parent.appendChild(btn);
+}
+
+// ============================================================
+// INPUT
+// ============================================================
+function getEntityAt(wx, wy) {
+  // Unidades primeiro (mais específicas)
+  for (const u of G.units) {
+    if (u.hp <= 0) continue;
+    if (Math.abs(u.x - wx) < 12 && Math.abs(u.y - wy) < 14) return u;
+  }
+  // Edifícios
+  const t = worldToTile(wx, wy);
+  if (G.occupancy[t.ty] && G.occupancy[t.ty][t.tx] > 0) {
+    const id = G.occupancy[t.ty][t.tx];
+    if (id !== 9) {
+      const b = G.buildings.find(b => b.id === id);
+      if (b) return b;
+    }
+  }
+  // Recurso
+  for (const r of G.resources) {
+    if (r.amount <= 0) continue;
+    if (Math.abs(r.x - wx) < 16 && Math.abs(r.y - wy) < 16) return r;
+  }
+  return null;
+}
+
+function setupInput() {
+  G.canvas.addEventListener('mousedown', (e) => {
+    if (G.gameOver) return;
+    G.mouse.isDown = true;
+    G.mouse.button = e.button;
+    G.mouse.downX = e.offsetX;
+    G.mouse.downY = e.offsetY;
+    G.mouse.x = e.offsetX;
+    G.mouse.y = e.offsetY;
+
+    if (e.button === 0 && G.pendingBuild) {
+      // Posicionar edifício
+      const wx = e.offsetX + G.camera.x;
+      const wy = e.offsetY + G.camera.y;
+      const t = worldToTile(wx, wy);
+      const def = BUILDINGS[G.pendingBuild.type];
+      const tx = t.tx - Math.floor(def.size/2);
+      const ty = t.ty - Math.floor(def.size/2);
+      if (canPlaceBuilding(G.pendingBuild.type, tx, ty)) {
+        const cost = def.cost;
+        if (canAfford(G.player, cost, G.player.civ)) {
+          pay(G.player, cost, G.player.civ);
+          const b = createBuilding(G.pendingBuild.type, tx, ty, 'player', false);
+          // Aldeões selecionados vão construir
+          const builders = G.selected.map(id => G.units.find(u => u.id === id)).filter(u => u && u.canGather && u.owner === 'player');
+          for (const bd of builders) commandBuild(bd, b);
+          G.pendingBuild = null;
+          document.body.classList.remove('placing');
+        } else {
+          showToast('Recursos insuficientes!');
+        }
+      } else {
+        showToast('Local inválido para construir!');
+      }
+      return;
+    }
+
+    if (e.button === 2) {
+      // Botão direito = comando
+      const wx = e.offsetX + G.camera.x;
+      const wy = e.offsetY + G.camera.y;
+      const target = getEntityAt(wx, wy);
+      const playerUnits = G.selected.map(id => G.units.find(u => u.id === id)).filter(u => u && u.owner === 'player');
+      if (target) {
+        if (target.owner === 'player') {
+          // Recurso ou amigo
+          for (const u of playerUnits) commandMove(u, wx, wy);
+        } else if (target.owner === 'ai') {
+          // Atacar
+          for (const u of playerUnits) commandAttack(u, target);
+        } else if (target.amount !== undefined) {
+          // Recurso
+          for (const u of playerUnits) {
+            if (u.canGather) commandGather(u, target);
+            else commandMove(u, target.x, target.y);
+          }
+        }
+      } else {
+        for (const u of playerUnits) commandMove(u, wx, wy);
+      }
+    }
+  });
+
+  G.canvas.addEventListener('mousemove', (e) => {
+    G.mouse.x = e.offsetX;
+    G.mouse.y = e.offsetY;
+    if (G.mouse.isDown && G.mouse.button === 0 && !G.pendingBuild) {
+      const dx = e.offsetX - G.mouse.downX;
+      const dy = e.offsetY - G.mouse.downY;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+        G.mouse.isDragging = true;
+        G.selectionBox = { x1: G.mouse.downX, y1: G.mouse.downY, x2: e.offsetX, y2: e.offsetY };
+      }
+    }
+  });
+
+  G.canvas.addEventListener('mouseup', (e) => {
+    if (G.gameOver) { G.mouse.isDown = false; return; }
+    if (e.button === 0) {
+      if (G.mouse.isDragging && G.selectionBox) {
+        // Selecionar unidades dentro da caixa
+        const sb = G.selectionBox;
+        const x1 = Math.min(sb.x1, sb.x2) + G.camera.x;
+        const y1 = Math.min(sb.y1, sb.y2) + G.camera.y;
+        const x2 = Math.max(sb.x1, sb.x2) + G.camera.x;
+        const y2 = Math.max(sb.y1, sb.y2) + G.camera.y;
+        G.selected = [];
+        for (const u of G.units) {
+          if (u.owner === 'player' && u.hp > 0 && u.x >= x1 && u.x <= x2 && u.y >= y1 && u.y <= y2) {
+            G.selected.push(u.id);
+          }
+        }
+      } else if (!G.pendingBuild) {
+        // Click simples
+        const wx = e.offsetX + G.camera.x;
+        const wy = e.offsetY + G.camera.y;
+        const ent = getEntityAt(wx, wy);
+        if (ent) {
+          if (ent.amount !== undefined) {
+            // Recurso — não selecionável
+            G.selected = [];
+          } else {
+            G.selected = [ent.id];
+          }
+        } else {
+          G.selected = [];
+        }
+      }
+    }
+    G.mouse.isDown = false;
+    G.mouse.isDragging = false;
+    G.selectionBox = null;
+  });
+
+  G.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // Minimap
+  G.miniCanvas.addEventListener('mousedown', (e) => {
+    const rect = G.miniCanvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) / rect.width;
+    const my = (e.clientY - rect.top) / rect.height;
+    G.camera.x = mx * CONFIG.MAP_W * CONFIG.TILE_SIZE - G.canvas.width / 2;
+    G.camera.y = my * CONFIG.MAP_H * CONFIG.TILE_SIZE - G.canvas.height / 2;
+    G.camera.x = clamp(G.camera.x, 0, CONFIG.MAP_W * CONFIG.TILE_SIZE - G.canvas.width);
+    G.camera.y = clamp(G.camera.y, 0, CONFIG.MAP_H * CONFIG.TILE_SIZE - G.canvas.height);
+  });
+
+  // Teclado
+  window.addEventListener('keydown', (e) => {
+    if (G.gameOver) return;
+    if (e.key === 'h' || e.key === 'H') {
+      const center = G.buildings.find(b => b.owner === 'player' && b.type === 'centro');
+      if (center) {
+        G.camera.x = center.x - G.canvas.width / 2;
+        G.camera.y = center.y - G.canvas.height / 2;
+        G.camera.x = clamp(G.camera.x, 0, CONFIG.MAP_W * CONFIG.TILE_SIZE - G.canvas.width);
+        G.camera.y = clamp(G.camera.y, 0, CONFIG.MAP_H * CONFIG.TILE_SIZE - G.canvas.height);
+      }
+    } else if (e.key === 'p' || e.key === 'P') {
+      G.paused = !G.paused;
+      showToast(G.paused ? '⏸ Pausado' : '▶ Em jogo');
+    } else if (e.key === 'Escape') {
+      if (G.pendingBuild) {
+        G.pendingBuild = null;
+        document.body.classList.remove('placing');
+      } else {
+        G.selected = [];
+      }
+    } else if (e.key === 's' || e.key === 'S') {
+      for (const id of G.selected) {
+        const u = G.units.find(u => u.id === id);
+        if (u && u.owner === 'player') {
+          u.state = 'idle';
+          u.target = null;
+          u.moveTarget = null;
+        }
+      }
+    } else if (e.key === 'ArrowLeft') G.camera.x -= 50;
+    else if (e.key === 'ArrowRight') G.camera.x += 50;
+    else if (e.key === 'ArrowUp') G.camera.y -= 50;
+    else if (e.key === 'ArrowDown') G.camera.y += 50;
+    G.camera.x = clamp(G.camera.x, 0, CONFIG.MAP_W * CONFIG.TILE_SIZE - G.canvas.width);
+    G.camera.y = clamp(G.camera.y, 0, CONFIG.MAP_H * CONFIG.TILE_SIZE - G.canvas.height);
+  });
+}
+
+// ============================================================
+// FIM DE JOGO
+// ============================================================
+function endGame(victory) {
+  if (G.gameOver) return;
+  G.gameOver = true;
+  const screen = document.getElementById('endgame-screen');
+  screen.className = victory ? 'victory' : 'defeat';
+  screen.style.display = 'flex';
+  document.getElementById('endgame-title').textContent = victory ? 'VITÓRIA!' : 'DERROTA';
+  const m = Math.floor(G.time / 60);
+  const s = Math.floor(G.time % 60);
+  const stats = G.player.lostStats;
+  document.getElementById('endgame-stats').innerHTML = `
+    <div>Tempo de jogo: ${m}m ${s}s</div>
+    <div>Reino jogado: ${CIVS[G.player.civ].name}</div>
+    <div>Reino inimigo: ${CIVS[G.ai.civ].name}</div>
+    <div>🪵 Madeira coletada: ${stats.gathered.wood || 0}</div>
+    <div>🍎 Comida coletada: ${stats.gathered.food || 0}</div>
+    <div>⚜ Ouro coletado: ${stats.gathered.gold || 0}</div>
+    <div>⛰ Pedra coletada: ${stats.gathered.stone || 0}</div>
+    <div>⚔ Unidades treinadas: ${stats.trained}</div>
+    <div>🏰 Edifícios construídos: ${stats.built}</div>
+  `;
+}
+
+// ============================================================
+// TELA INICIAL — SELEÇÃO DE POVO
+// ============================================================
+function drawCivBanner(canvas, civ) {
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, 80, 80);
+  const c = CIVS[civ];
+  // Escudo
+  ctx.fillStyle = c.color;
+  ctx.beginPath();
+  ctx.moveTo(40, 8);
+  ctx.lineTo(72, 16);
+  ctx.lineTo(72, 50);
+  ctx.quadraticCurveTo(72, 70, 40, 76);
+  ctx.quadraticCurveTo(8, 70, 8, 50);
+  ctx.lineTo(8, 16);
+  ctx.closePath();
+  ctx.fill();
+  // Borda
+  ctx.strokeStyle = c.accent;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  // Símbolo
+  ctx.fillStyle = c.accent;
+  ctx.font = 'bold 28px MedievalSharp';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  // Símbolos por povo
+  const symbols = {
+    francos: '♞', saxoes: '⛨', normandos: '⚔', vikings: '⚒', iberos: '☼', eslavos: '✦'
+  };
+  ctx.fillText(symbols[civ] || '⚔', 40, 42);
+}
+
+let selectedCiv = null;
+function buildStartScreen() {
+  const grid = document.getElementById('civ-grid');
+  for (const key of Object.keys(CIVS)) {
+    const c = CIVS[key];
+    const card = document.createElement('div');
+    card.className = 'civ-card';
+    card.innerHTML = `
+      <canvas class="civ-banner" width="80" height="80"></canvas>
+      <div class="civ-name">${c.name}</div>
+      <div class="civ-bonus">${c.bonus}</div>
+    `;
+    card.onclick = () => {
+      document.querySelectorAll('.civ-card').forEach(el => el.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedCiv = key;
+      document.getElementById('start-btn').disabled = false;
+    };
+    grid.appendChild(card);
+    drawCivBanner(card.querySelector('canvas'), key);
+  }
+  document.getElementById('start-btn').onclick = () => {
+    if (!selectedCiv) return;
+    document.getElementById('start-screen').style.display = 'none';
+    setupGame(selectedCiv);
+    requestAnimationFrame(gameLoop);
+  };
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  G.canvas = document.getElementById('map-canvas');
+  G.ctx = G.canvas.getContext('2d');
+  G.miniCanvas = document.getElementById('minimap');
+  G.miniCtx = G.miniCanvas.getContext('2d');
+
+  function resize() {
+    G.canvas.width = window.innerWidth;
+    G.canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  setupInput();
+  buildStartScreen();
+}
+
+init();
+
+</script>
+</body>
+</html>
