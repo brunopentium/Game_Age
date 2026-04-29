@@ -19,7 +19,10 @@
   --ink: #2b1a0a;
   --blood: #7b1f1f;
   --green-moss: #4a5a2a;
+  --ui-shadow: 0 12px 30px rgba(0, 0, 0, 0.48);
+  --edge-light: rgba(255, 226, 153, 0.28);
 }
+
 
 * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
@@ -27,7 +30,10 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #1a0f08;
+  background:
+    radial-gradient(circle at 18% 15%, rgba(255, 206, 120, 0.1) 0%, transparent 30%),
+    radial-gradient(circle at 78% 82%, rgba(72, 109, 191, 0.12) 0%, transparent 36%),
+    #120a05;
   font-family: 'Cinzel', serif;
   color: var(--ink);
 }
@@ -44,7 +50,23 @@ html, body {
   top: 0;
   left: 0;
   cursor: crosshair;
-  background: #2a3d1f;
+  background:
+    linear-gradient(180deg, rgba(14, 28, 8, 0.35) 0%, rgba(10, 17, 6, 0.55) 100%),
+    radial-gradient(circle at 20% 18%, rgba(121, 159, 86, 0.28), transparent 45%),
+    #2a3d1f;
+  filter: saturate(1.08) contrast(1.06);
+}
+
+#game-container::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% -10%, rgba(255, 236, 189, 0.12), transparent 45%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.01) 0 2px, transparent 2px 6px);
+  mix-blend-mode: screen;
+  opacity: 0.55;
 }
 
 /* ===================== TELA INICIAL ===================== */
@@ -52,8 +74,9 @@ html, body {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at center, rgba(212, 175, 55, 0.15) 0%, transparent 70%),
-    linear-gradient(180deg, #1a0f08 0%, #2a1a0a 100%);
+    radial-gradient(ellipse at center, rgba(212, 175, 55, 0.2) 0%, transparent 58%),
+    radial-gradient(circle at 20% 20%, rgba(76, 110, 180, 0.14), transparent 40%),
+    linear-gradient(180deg, #140b05 0%, #2b1709 60%, #140b05 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -90,15 +113,16 @@ html, body {
 }
 
 .civ-card {
+  backdrop-filter: blur(1.2px);
   background: linear-gradient(180deg, var(--parchment-1) 0%, var(--parchment-2) 100%);
   border: 3px solid var(--wood-2);
-  border-radius: 6px;
+  border-radius: 9px;
   padding: 1rem;
   cursor: pointer;
   text-align: center;
   transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
   position: relative;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(139, 90, 43, 0.2);
+  box-shadow: var(--ui-shadow), inset 0 0 20px rgba(139, 90, 43, 0.2), inset 0 1px 0 var(--edge-light);
 }
 
 .civ-card:hover {
@@ -160,12 +184,15 @@ html, body {
 
 /* ===================== HUD ===================== */
 #hud-top {
+  backdrop-filter: blur(2px);
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 50px;
-  background: linear-gradient(180deg, var(--wood-2) 0%, var(--wood-1) 100%);
+  background:
+    linear-gradient(180deg, rgba(139, 90, 43, 0.96) 0%, rgba(74, 47, 26, 0.96) 100%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 8px);
   border-bottom: 3px solid var(--gold);
   display: flex;
   align-items: center;
@@ -208,12 +235,15 @@ html, body {
 
 /* ===================== PAINEL INFERIOR ===================== */
 #hud-bottom {
+  backdrop-filter: blur(2px);
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   height: 160px;
-  background: linear-gradient(0deg, var(--wood-1) 0%, var(--wood-2) 100%);
+  background:
+    linear-gradient(0deg, rgba(74, 47, 26, 0.96) 0%, rgba(107, 68, 35, 0.97) 100%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0 2px, transparent 2px 7px);
   border-top: 3px solid var(--gold);
   display: flex;
   z-index: 10;
@@ -257,6 +287,7 @@ html, body {
 }
 
 .action-btn {
+  box-shadow: 0 3px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.35);
   background: linear-gradient(180deg, var(--parchment-1) 0%, var(--parchment-3) 100%);
   border: 2px solid var(--wood-2);
   border-radius: 3px;
@@ -311,6 +342,7 @@ html, body {
 
 #minimap {
   width: 150px;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.45), inset 0 0 0 2px rgba(255, 221, 150, 0.25);
   height: 150px;
   border: 3px solid var(--gold);
   border-radius: 3px;
@@ -346,7 +378,7 @@ html, body {
   background: rgba(243, 227, 189, 0.1);
   padding: 1.5rem 2.5rem;
   border: 2px solid var(--gold);
-  border-radius: 6px;
+  border-radius: 9px;
   margin-bottom: 2rem;
   font-size: 1.05rem;
 }
@@ -355,6 +387,7 @@ html, body {
 
 /* ===================== TOAST ===================== */
 #toast {
+  backdrop-filter: blur(1.5px);
   position: absolute;
   top: 70px;
   left: 50%;
